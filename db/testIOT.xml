@@ -1,0 +1,189 @@
+<?xml version="1.0"?>
+<!DOCTYPE sqlunit SYSTEM "file:bin/sqlunit.dtd">
+<sqlunit>
+  <connection extern="db/sqlunit.properties" />
+  
+  <setup>
+      <include file="db/schemaIOT.sql" />
+  </setup>
+
+<test name="One row example, padding" failure-message="Error with Simple SELECT">
+  <prepare>
+    <sql><stmt>alter index it1 rebuild parameters('PerFieldAnalyzer:F1(org.apache.lucene.analysis.core.KeywordAnalyzer),id(org.apache.lucene.analysis.core.KeywordAnalyzer)')</stmt></sql>
+  </prepare>
+<sql>
+  <stmt>select * from T1 where LCONTAINS(F2, 'ravi') > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="F1" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">ravi</col>
+      <col id="3" name="F3" type="NUMERIC">3.46</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="No rows example" failure-message="Error with empty Simple SELECT">
+<sql>
+  <stmt>select * from t1 where lcontains(f2, 'aaa') > 0</stmt>
+</sql>
+<result>
+  <resultset id="1" rowcount="0"/>
+</result>
+</test>
+
+<test name="Analyzer:org.apache.lucene.analysis.en.EnglishAnalyzer" failure-message="Error during sync">
+  <prepare>
+    <sql><stmt>alter index it1 parameters('Analyzer:org.apache.lucene.analysis.en.EnglishAnalyzer;AutoTuneMemory:false')</stmt></sql>
+    <sql><stmt>INSERT INTO t1 VALUES (6, 'he abhorred accents', 20.12)</stmt></sql>
+    <sql><stmt>INSERT INTO t1 VALUES (7, 'does', 25.98)</stmt></sql>
+    <sql><stmt>UPDATE t1 SET f2 = 'Nipun' WHERE f1 = 3</stmt></sql>
+    <sql><stmt>INSERT INTO t1 VALUES (16, 'ravi marcelo', 30.01)</stmt></sql>
+    <sql><stmt>INSERT INTO t1 VALUES (17, 'marcelo', 30.99)</stmt></sql>
+    <sql><stmt>commit</stmt></sql>
+  </prepare>
+  <call>
+    <stmt>{call LuceneDomainIndex.sync('IT1')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<test name="Optimize" failure-message="Error during optimize">
+  <call>
+    <stmt>{call LuceneDomainIndex.optimize('IT1')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<test name="One row example, after optimize" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select lscore(1) sc,f2 from t1 where lcontains(f2, 'ravi',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">ravi</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">0.625000059604644775390625</col>
+      <col id="2" name="F2" type="VARCHAR">ravi marcelo</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="One row example, after optimize" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select lscore(1) sc,f2 from t1 where lcontains(f2, 'Nipun',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">Nipun</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="lcontains outside where" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select lcontains(f2,'ravi') sc from t1</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">1</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">0</col>
+    </row>
+    <row id="3">
+      <col id="1" name="SC" type="NUMERIC">0</col>
+    </row>
+    <row id="4">
+      <col id="1" name="SC" type="NUMERIC">0</col>
+    </row>
+    <row id="5">
+      <col id="1" name="SC" type="NUMERIC">1</col>
+    </row>
+    <row id="6">
+      <col id="1" name="SC" type="NUMERIC">0</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Multiple row example, range query" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select f1,f3 from t1 where lcontains(f2,'F3:[0 TO 30]',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="F1" type="NUMERIC">1</col>
+      <col id="2" name="F3" type="NUMERIC">3.46</col>
+    </row>
+    <row id="2">
+      <col id="1" name="F1" type="NUMERIC">3</col>
+      <col id="2" name="F3" type="NUMERIC">15.87</col>
+    </row>
+    <row id="3">
+      <col id="1" name="F1" type="NUMERIC">6</col>
+      <col id="2" name="F3" type="NUMERIC">20.12</col>
+    </row>
+    <row id="4">
+      <col id="1" name="F1" type="NUMERIC">7</col>
+      <col id="2" name="F3" type="NUMERIC">25.98</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test delete" failure-message="Error with Simple DELETE">
+<sql>
+  <stmt>DELETE FROM t1 WHERE f2 = 'ravi'</stmt>
+</sql>
+<result>
+  <updatecount>1</updatecount>
+</result>
+</test>
+
+<test name="Filtering deleted rows, score not adjusted yet" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select lscore(1) sc,f2 from t1 where lcontains(f2, 'ravi',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">0.625000059604644775390625</col>
+      <col id="2" name="F2" type="VARCHAR">ravi marcelo</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test stemmer" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select lscore(1) sc,f2 from t1 where lcontains(f2, 'accents',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">he abhorred accents</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+  <teardown>
+    <sql>
+      <stmt>drop table t1</stmt>
+    </sql>
+  </teardown>
+</sqlunit>
+

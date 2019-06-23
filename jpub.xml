@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<project name="jpub" default="..." basedir=".">
+
+    <!--
+     - You need to pass these properties: login, file
+     - login string must be using syntax of -thin option of loadjava.
+     - ex:
+     -   <jpub-infile
+     -     login="scott/tiger@sqlnet_connect_string"
+     -     file="../infile.in"/>
+     -
+     -->
+
+    <path id="jpub.classpath">
+     <pathelement path="${ORACLE_HOME}/jdbc/lib/ojdbc6.jar"/>
+     <pathelement path="${ORACLE_HOME}/oc4j/sqlj/lib/translator.jar"/>
+     <pathelement path="${ORACLE_HOME}/oc4j/sqlj/lib/runtime12.jar"/>
+     <!-- required jar for 18cR1 jpublisher runtime -->
+     <pathelement path="${ORACLE_HOME}/md/jlib/mapbuilder.jar"/>
+     <!-- required jar for 12cR2 jpublisher runtime -->
+     <pathelement path="bin/converter.jar"/>
+    </path>
+
+    <!--
+     - This macro generates java objects based on a SQL type
+     - using jpub (JPublisher) interface and admin tool.
+     - To execute this macro, provide these parameters:
+     -   login   Full connect string to the database server.
+     -   package package for the generated classes.
+     -   outDir  out directory for the generated class sources.
+     -   file    Input File containing list of object to be generated .
+     Example input-file content:
+      SQL a
+      SQL b AS c
+      SQL d GENERATE e AS f
+     -->
+     <macrodef name="jpub-infile" description="LGenerate JPub objects from SQL types">
+        <attribute name="login" default="LOGIN NOT SET"/>
+        <attribute name="file" default="FILE NOT SET"/>
+        <attribute name="package" default="PACKAGE NOT SET"/>
+        <attribute name="dir" default="."/>
+        <attribute name="outdir" default="."/>
+        <attribute name="failonerror" default="true"/>
+        <attribute name="case" default="mixed"/>
+        <!-- load resource -->
+        <sequential>
+          <java failonerror="@{failonerror}" classname="oracle.jpub.java.Main" 
+                fork="yes"
+                dir="@{dir}">
+            <classpath refid="jpub.classpath" />
+            <arg value="-user"/>
+            <arg value="@{login}"/>
+            <arg value="-input"/>
+            <arg value="@{file}"/>
+            <arg value="-numbertypes=objectjdbc"/>
+            <arg value="-usertypes=oracle"/>
+            <arg value="-package=@{package}"/>
+            <arg value="-dir=@{outdir}"/>
+            <arg value="-compile=true"/>
+            <arg value="-case=@{case}"/>
+          </java>
+        </sequential>
+    </macrodef>
+
+    <!--
+     - This macro generates java objects based on a SQL type
+     - using jpub (JPublisher) interface and admin tool.
+     - To execute this macro, provide these parameters:
+     -   login   Full connect string to the database server.
+     -   package package for the generated classes.
+     -   outDir  out directory for the generated class sources.
+     -   file    Input File containing list of object to be generated .
+     Example input-file content:
+      SQL a
+      SQL b AS c
+      SQL d GENERATE e AS f
+     -->
+     <macrodef name="jpub" description="LGenerate JPub objects from SQL types">
+        <attribute name="login" default="LOGIN NOT SET"/>
+        <attribute name="sql" default="SQL LIST NOT SET"/>
+        <attribute name="package" default="PACKAGE NOT SET"/>
+        <attribute name="dir" default="."/>
+        <attribute name="outdir" default="."/>
+        <attribute name="failonerror" default="true"/>
+        <attribute name="case" default="mixed"/>
+        <!-- load resource -->
+        <sequential>
+          <java failonerror="@{failonerror}" classname="oracle.jpub.java.Main" 
+                fork="yes"
+                dir="@{dir}">
+            <classpath refid="jpub.classpath" />
+            <arg value="-user"/>
+            <arg value="@{login}"/>
+            <arg value="-sql"/>
+            <arg value="@{sql}"/>
+            <arg value="-numbertypes=objectjdbc"/>
+            <arg value="-usertypes=oracle"/>
+            <arg value="-package=@{package}"/>
+            <arg value="-dir=@{outdir}"/>
+            <arg value="-compile=true"/>
+            <arg value="-case=@{case}"/>
+         </java>
+        </sequential>
+    </macrodef>
+
+</project>

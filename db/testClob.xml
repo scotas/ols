@@ -1,0 +1,136 @@
+<?xml version="1.0"?>
+<!DOCTYPE sqlunit SYSTEM "file:bin/sqlunit.dtd">
+<sqlunit>
+  <connection extern="db/sqlunit.properties" />
+  
+  <setup>
+      <include file="db/schemaClob.sql" />
+  </setup>
+
+<test name="One row example" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select lscore(1), to_char(f2) from t1 where lcontains(f3, 'f2:ravi',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="c1" type="NUMERIC">1</col>
+      <col id="2" name="c2" type="VARCHAR">ravi</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="No rows example" failure-message="Error with empty Simple SELECT">
+<sql>
+  <stmt>select lscore(1), to_char(f2) from t1 where lcontains(f3, 'f2:aaa',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1" rowcount="0"/>
+</result>
+</test>
+
+<test name="Add/update new rows" failure-message="Error adding/updating new rows">
+  <prepare>
+    <sql><stmt>alter index it1 parameters('Analyzer:org.apache.lucene.analysis.core.StopAnalyzer;MaxBufferedDocs:500;AutoTuneMemory:false')</stmt></sql>
+    <sql><stmt>INSERT INTO t1 VALUES ('6', 'cheuk',101)</stmt></sql>
+    <sql><stmt>INSERT INTO t1 VALUES ('7', 'chau',102)</stmt></sql>
+    <sql><stmt>UPDATE t1 SET f2 = 'Nipun', f3 = f3 WHERE f1 = '3'</stmt></sql>
+    <sql><stmt>INSERT INTO t1 VALUES ('16', 'ravi marcelo',101)</stmt></sql>
+    <sql><stmt>INSERT INTO t1 VALUES ('17', 'marcelo',102)</stmt></sql>
+  </prepare>
+  <call>
+    <stmt>{call LuceneDomainIndex.sync('IT1')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<test name="multiple row select" failure-message="Error with Multiple rows SELECT">
+<sql>
+  <stmt>select /*+ DOMAIN_INDEX_SORT */ lscore(1), to_char(f2) from t1 where lcontains(f3, 'f2:ravi OR f5:data1',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="LSCORE(1)" type="NUMERIC">1</col>
+      <col id="2" name="TO_CHAR(F2)" type="VARCHAR">ravi</col>
+    </row>
+    <row id="2">
+      <col id="1" name="LSCORE(1)" type="NUMERIC">0.670330524444580078125</col>
+      <col id="2" name="TO_CHAR(F2)" type="VARCHAR">ravi marcelo</col>
+    </row>
+    <row id="3">
+      <col id="1" name="LSCORE(1)" type="NUMERIC">0.0604406781494617462158203125</col>
+      <col id="2" name="TO_CHAR(F2)" type="VARCHAR">Nipun</col>
+    </row>
+    <row id="4">
+      <col id="1" name="LSCORE(1)" type="NUMERIC">0.0604406781494617462158203125</col>
+      <col id="2" name="TO_CHAR(F2)" type="VARCHAR">marcelo</col>
+    </row>
+    <row id="5">
+      <col id="1" name="LSCORE(1)" type="NUMERIC">0.0604406781494617462158203125</col>
+      <col id="2" name="TO_CHAR(F2)" type="VARCHAR">cheuk</col>
+    </row>
+    <row id="6">
+      <col id="1" name="LSCORE(1)" type="NUMERIC">0.0604406781494617462158203125</col>
+      <col id="2" name="TO_CHAR(F2)" type="VARCHAR">chau</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="lcontains outside where" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select lcontains(f3,'f2:ravi') sc from t1</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="c1" type="NUMERIC">1</col>
+    </row>
+    <row id="2">
+      <col id="1" name="c1" type="NUMERIC">0</col>
+    </row>
+    <row id="3">
+      <col id="1" name="c1" type="NUMERIC">1</col>
+    </row>
+    <row id="4">
+      <col id="1" name="c1" type="NUMERIC">0</col>
+    </row>
+    <row id="5">
+      <col id="1" name="c1" type="NUMERIC">0</col>
+    </row>
+    <row id="6">
+      <col id="1" name="c1" type="NUMERIC">0</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="select after deletions" failure-message="Error with Simple SELECT">
+  <prepare>
+    <sql><stmt>DELETE FROM t2 WHERE f4 = 102</stmt></sql>
+  </prepare>
+<sql>
+  <stmt>select lscore(1), to_char(f2) from t1 where lcontains(f3, 'f2:marcelo',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="c1" type="NUMERIC">1</col>
+      <col id="2" name="c2" type="VARCHAR">ravi marcelo</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+  <teardown>
+    <sql>
+      <stmt>drop table t1</stmt>
+    </sql>
+    <sql>
+      <stmt>drop table t2</stmt>
+    </sql>
+  </teardown>
+</sqlunit>
+

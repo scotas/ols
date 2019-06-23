@@ -1,0 +1,241 @@
+<!--
+  $Id: sqlunit.dtd,v 1.1 2010/09/06 18:31:53 mochoa Exp $
+  $Source: /cvsroot/dbprism/odi/bin/sqlunit.dtd,v $
+  This is the DTD for creating SQLUnit test cases in XML
+-->
+
+<!-- Describing common elements -->
+<!ELEMENT skip (#PCDATA)>
+  <!ATTLIST skip
+    value (true|false) "false">
+<!ELEMENT severity (#PCDATA)>
+<!ELEMENT category (#PCDATA)>
+<!ELEMENT classifiers ((severity)?, (category)?)>
+<!ELEMENT stmt (#PCDATA)>
+<!ELEMENT param (#PCDATA)>
+  <!ATTLIST param
+    id CDATA #REQUIRED
+    name CDATA #IMPLIED
+    type CDATA #REQUIRED
+    scale CDATA #IMPLIED
+    typename CDATA #IMPLIED
+    is-null (true|false) "false"
+    inout (in|out|inout) "in">
+<!ELEMENT sql (stmt, (param)*)>
+  <!ATTLIST sql
+    id CDATA #IMPLIED
+    connection-id CDATA #IMPLIED>
+<!ELEMENT call (stmt, (param)*)>
+  <!ATTLIST call
+    id CDATA #IMPLIED
+    connection-id CDATA #IMPLIED>
+<!ELEMENT arg EMPTY>
+  <!ATTLIST arg
+    name CDATA #REQUIRED
+    value CDATA #IMPLIED
+    type CDATA #IMPLIED>
+<!ELEMENT typedef EMPTY>
+  <!ATTLIST typedef
+    typename CDATA #REQUIRED
+    classname CDATA #REQUIRED>
+<!ELEMENT constructorArgs (arg)*>
+<!ELEMENT methodArgs (arg)*>
+<!ELEMENT methodinvoker ((constructorArgs)*,(methodArgs)*)>
+  <!ATTLIST methodinvoker
+    static (true|false) "false"
+    class CDATA #REQUIRED
+    method CDATA #REQUIRED>
+<!ELEMENT dynamicsql ((constructorArgs)*,(methodArgs)*)>
+  <!ATTLIST dynamicsql
+    static (true|false) "false"
+    class CDATA #REQUIRED
+    method CDATA #REQUIRED>
+<!ELEMENT include EMPTY>
+  <!ATTLIST include
+    file CDATA #REQUIRED
+    connection-id CDATA #IMPLIED>
+<!ELEMENT set (((sql|call),result)?|(constructorArgs*,methodArgs*)?)>
+  <!ATTLIST set
+    name CDATA #REQUIRED
+    value CDATA #IMPLIED
+    static (true|false) "false"
+    class CDATA #IMPLIED
+    method CDATA #IMPLIED>
+
+<!-- Describing the match element used for fuzzy matching -->
+<!ELEMENT match (arg)*>
+  <!ATTLIST match
+    resultset-id CDATA #IMPLIED
+    row-id CDATA #IMPLIED
+    col-id CDATA #IMPLIED
+    matcher CDATA #REQUIRED>
+
+<!-- Describing a failure as a result of processing an SQL statement -->
+<!ELEMENT code (#PCDATA)>
+<!ELEMENT message (#PCDATA)>
+<!ELEMENT exception ((code)?, (message)?)>
+
+<!-- Describing the connection element -->
+<!ELEMENT driver (#PCDATA)>
+<!ELEMENT url (#PCDATA)>
+<!ELEMENT user (#PCDATA)>
+<!ELEMENT password (#PCDATA)>
+<!ELEMENT jarfile-url (#PCDATA)>
+<!ELEMENT datasource (#PCDATA)>
+<!ELEMENT jndi (arg)*>
+<!ELEMENT typemap (typedef)*>
+<!ELEMENT connection (((driver,url,user,password,(jarfile-url)?)|(datasource,jndi))?)>
+  <!ATTLIST connection 
+    connection-id CDATA #IMPLIED
+    extern CDATA #IMPLIED
+    server-name CDATA #IMPLIED
+    transaction-support (on|off|implicit) "on"
+    reconnect-on-failure (on|off) "off">
+
+<!-- Describing the foreach element -->
+<!ELEMENT foreach (sql)*>
+  <!ATTLIST foreach
+    param CDATA #REQUIRED
+    values CDATA #IMPLIED
+    start CDATA #IMPLIED
+    stop CDATA #IMPLIED
+    step CDATA #IMPLIED
+    count CDATA #IMPLIED>
+
+<!-- Defining the funcdef element -->
+<!ELEMENT funcdef EMPTY>
+  <!ATTLIST funcdef
+    name CDATA #REQUIRED
+    query CDATA #REQUIRED
+    description CDATA #IMPLIED>
+
+<!-- Defining the subdef element -->
+<!ELEMENT subdef ((param)*)>
+  <!ATTLIST subdef
+    name CDATA #REQUIRED
+    query CDATA #REQUIRED
+    description CDATA #IMPLIED
+    type (sql|call) "sql">
+
+<!-- Describing the setup element -->
+<!ELEMENT setup ((set)*, (funcdef)*, (subdef)*, (((sql)*,(foreach)*)|(include)*))>
+
+<!-- Defining the subparam element -->
+<!ELEMENT subparam EMPTY>
+  <!ATTLIST subparam
+    name CDATA #REQUIRED
+    value CDATA #REQUIRED>
+
+<!-- Defining the sub element -->
+<!ELEMENT sub ((subparam)*)>
+  <!ATTLIST sub
+    lookup CDATA #REQUIRED
+    connection-id CDATA #IMPLIED>
+
+<!-- Describing the prepare element -->
+<!ELEMENT prepare ((set)*,(sql)*,(foreach)*)>
+
+<!-- Describing the test element -->
+<!ELEMENT updatecount (#PCDATA)>
+<!ELEMENT col (#PCDATA)>
+  <!ATTLIST col
+    id CDATA #REQUIRED
+    name CDATA #IMPLIED
+    type CDATA #REQUIRED>
+<!ELEMENT row ((col)+)>
+  <!ATTLIST row
+    id CDATA #REQUIRED
+    partial (true|false) "false">
+<!ELEMENT resultset ((row)*)>
+  <!ATTLIST resultset
+    id CDATA #REQUIRED
+    partial (true|false) "false"
+    rowcount CDATA #IMPLIED
+    order-by CDATA #IMPLIED>
+<!ELEMENT field (#PCDATA|struct)*>
+  <!ATTLIST field
+    name CDATA #REQUIRED>
+<!ELEMENT struct (field)*>
+<!ELEMENT outparam (#PCDATA|resultset|struct)*>
+  <!ATTLIST outparam
+    id CDATA #REQUIRED
+    name CDATA #IMPLIED
+    type CDATA #REQUIRED>
+<!ELEMENT result ((((outparam)*, (updatecount)?, (resultset)*)+|((outparam)*, exception))?)>
+  <!ATTLIST result
+    id CDATA #IMPLIED
+    echo (true|false) "false">
+<!ELEMENT test ((skip)?, (classifiers)?, (match)*, (prepare)?, ((sql|call|methodinvoker|dynamicsql|sub), result)?)>
+  <!ATTLIST test
+    name CDATA #REQUIRED
+    java-object-support (on|off) "off"
+    id CDATA #IMPLIED
+    name CDATA #IMPLIED
+    failure-message CDATA #IMPLIED
+    assert CDATA #IMPLIED
+    expected-duration-millis CDATA #IMPLIED
+    percentage-tolerance CDATA #IMPLIED>
+
+<!-- Describing the batchtest element -->
+<!ELEMENT paramset (param)+>
+  <!ATTLIST paramset
+    id CDATA #REQUIRED>
+<!ELEMENT batchcall (stmt, (paramset)+)>
+  <!ATTLIST batchcall
+    connection-id CDATA #IMPLIED>
+<!ELEMENT batchsql ((stmt)+)>
+  <!ATTLIST batchsql
+    connection-id CDATA #IMPLIED>
+<!ELEMENT batchresult (updatecount)*>
+  <!ATTLIST batchresult
+    expected-count CDATA #IMPLIED
+    failed-at CDATA #IMPLIED>
+<!ELEMENT batchtest ((skip)?, (classifiers)?, (batchcall|batchsql), batchresult)>
+  <!ATTLIST batchtest
+    java-object-support (on|off) "off"
+    failure-message CDATA #IMPLIED
+    assert CDATA #IMPLIED
+    name CDATA #REQUIRED>
+
+<!-- Defining the diff element -->
+<!ELEMENT diff ((skip)?, (classifiers)?, (match)*, (prepare)?, (sql|call), (sql|call))>
+  <!ATTLIST diff
+    name CDATA #REQUIRED
+    java-object-support (on|off) "off"
+    failure-message CDATA #IMPLIED
+    assert CDATA #IMPLIED 
+    multi-threaded (true|false) "false">
+
+<!-- Defining the echo element -->
+<!ELEMENT echo ((skip)?, (classifiers)?)>
+  <!ATTLIST echo
+    name CDATA #REQUIRED
+    text CDATA #REQUIRED
+    value CDATA #IMPLIED>
+
+<!-- Defining the func element -->
+<!ELEMENT func ((skip)?, (classifiers)?)>
+  <!ATTLIST func
+    name CDATA #REQUIRED
+    lookup CDATA #REQUIRED
+    connection-id CDATA #IMPLIED
+    param0 CDATA #IMPLIED
+    param1 CDATA #IMPLIED
+    param2 CDATA #IMPLIED
+    param3 CDATA #IMPLIED
+    param4 CDATA #IMPLIED
+    param5 CDATA #IMPLIED
+    param6 CDATA #IMPLIED
+    param7 CDATA #IMPLIED
+    param8 CDATA #IMPLIED
+    param9 CDATA #IMPLIED>
+
+<!-- Describing the teardown element -->
+<!ELEMENT teardown (((sql)*,(foreach)*)|(include)*)>
+
+<!-- Describing the sqlunit element -->
+<!ELEMENT sqlunit 
+    ((connection)+, (setup)*, (test|batchtest|diff|echo|func)+, (teardown)*)>
+  <!ATTLIST sqlunit
+      name CDATA #IMPLIED>
+

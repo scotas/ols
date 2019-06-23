@@ -1,0 +1,458 @@
+<?xml version="1.0"?>
+<!DOCTYPE sqlunit SYSTEM "file:bin/sqlunit.dtd">
+<sqlunit>
+  <connection extern="db/sqlunit.properties" />
+  
+  <setup>
+      <include file="db/dicc-values.sql" />
+  </setup>
+
+<test name="Test indexDictionary" failure-message="Error with Simple SELECT">
+  <prepare>
+    <sql><stmt>create index dicc_lidx on dicc(term) indextype is lucene.luceneindex 
+parameters('ExtraCols:def,term "dictionary";LogLevel:INFO;FormatCols:TERM(ANALYZED_WITH_POSITIONS_OFFSETS);PerFieldAnalyzer:TERM(org.apache.lucene.analysis.core.WhitespaceAnalyzer),DEF(org.apache.lucene.analysis.core.StopAnalyzer),dictionary(org.apache.lucene.analysis.core.SimpleAnalyzer)')</stmt></sql>
+  </prepare>
+  <call>
+    <stmt>{call DidYouMean.indexDictionary('DICC_LIDX', 'dictionary')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<test name="Test optimize" failure-message="Error with Simple SELECT">
+  <call>
+    <stmt>{call LuceneDomainIndex.optimize('DICC_LIDX')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<!--test name="Test lautocomplete th" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select * from table(lautocomplete('DICC_LIDX','TERM','th',15)) t</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="TERM" type="VARCHAR">there</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">3</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="2">
+      <col id="1" name="TERM" type="VARCHAR">theory</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">2</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="3">
+      <col id="1" name="TERM" type="VARCHAR">thaw</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">2</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="4">
+      <col id="1" name="TERM" type="VARCHAR">then</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">2</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="5">
+      <col id="1" name="TERM" type="VARCHAR">therefore</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">2</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="6">
+      <col id="1" name="TERM" type="VARCHAR">thence</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="7">
+      <col id="1" name="TERM" type="VARCHAR">their</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="8">
+      <col id="1" name="TERM" type="VARCHAR">thanks</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="9">
+      <col id="1" name="TERM" type="VARCHAR">theft</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="10">
+      <col id="1" name="TERM" type="VARCHAR">theatrical</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="11">
+      <col id="1" name="TERM" type="VARCHAR">the</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="12">
+      <col id="1" name="TERM" type="VARCHAR">theme</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="13">
+      <col id="1" name="TERM" type="VARCHAR">that</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="14">
+      <col id="1" name="TERM" type="VARCHAR">thermal</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="15">
+      <col id="1" name="TERM" type="VARCHAR">thank</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+  </resultset>
+</result>
+</test-->
+
+<!--test name="Test lautocomplete spor" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select * from table(lautocomplete('DICC_LIDX','TERM','spor',10)) t</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="TERM" type="VARCHAR">sport</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">3</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="2">
+      <col id="1" name="TERM" type="VARCHAR">sportsman</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="3">
+      <col id="1" name="TERM" type="VARCHAR">sporadic</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+  </resultset>
+</result>
+</test-->
+
+<!--test name="Test lautocomplete appl" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select * from table(lautocomplete('DICC_LIDX','TERM','appl',10)) t</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="TERM" type="VARCHAR">applause</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="2">
+      <col id="1" name="TERM" type="VARCHAR">apple</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="3">
+      <col id="1" name="TERM" type="VARCHAR">appliance</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="4">
+      <col id="1" name="TERM" type="VARCHAR">applicable</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="5">
+      <col id="1" name="TERM" type="VARCHAR">applicant</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="6">
+      <col id="1" name="TERM" type="VARCHAR">application</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="7">
+      <col id="1" name="TERM" type="VARCHAR">apply</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="8">
+      <col id="1" name="TERM" type="VARCHAR">applaud</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+  </resultset>
+</result>
+</test
+
+<test name="Test lsimilarity there*" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select lsimilarity(1) sim1, term t from dicc where lcontains(term, 'there*', 1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SIM1" type="NUMERIC">1</col>
+      <col id="2" name="T" type="VARCHAR">there</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SIM1" type="NUMERIC">1</col>
+      <col id="2" name="T" type="VARCHAR">there</col>
+    </row>
+    <row id="3">
+      <col id="1" name="SIM1" type="NUMERIC">1</col>
+      <col id="2" name="T" type="VARCHAR">there</col>
+    </row>
+    <row id="4">
+      <col id="1" name="SIM1" type="NUMERIC">0.5555555820465087890625</col>
+      <col id="2" name="T" type="VARCHAR">therefore</col>
+    </row>
+    <row id="5">
+      <col id="1" name="SIM1" type="NUMERIC">0.5555555820465087890625</col>
+      <col id="2" name="T" type="VARCHAR">therefore</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test lsimilarity there~0.7" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select lsimilarity(1) sim1, term t from dicc where lcontains(term, 'there~0.7', 1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SIM1" type="NUMERIC">1</col>
+      <col id="2" name="T" type="VARCHAR">there</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SIM1" type="NUMERIC">1</col>
+      <col id="2" name="T" type="VARCHAR">there</col>
+    </row>
+    <row id="3">
+      <col id="1" name="SIM1" type="NUMERIC">1</col>
+      <col id="2" name="T" type="VARCHAR">there</col>
+    </row>
+    <row id="4">
+      <col id="1" name="SIM1" type="NUMERIC">0.800000011920928955078125</col>
+      <col id="2" name="T" type="VARCHAR">theme</col>
+    </row>
+    <row id="5">
+      <col id="1" name="SIM1" type="NUMERIC">0.800000011920928955078125</col>
+      <col id="2" name="T" type="VARCHAR">where</col>
+    </row>
+    <row id="6">
+      <col id="1" name="SIM1" type="NUMERIC">0.800000011920928955078125</col>
+      <col id="2" name="T" type="VARCHAR">here</col>
+    </row>
+    <row id="7">
+      <col id="1" name="SIM1" type="NUMERIC">0.800000011920928955078125</col>
+      <col id="2" name="T" type="VARCHAR">here</col>
+    </row>
+  </resultset>
+</result>
+</test>
+-->
+<test name="Test ldidyoumean atention-Levenstein" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>SELECT * FROM TABLE(ldidyoumean('DICC_LIDX', 'atention', 5, 'b', 'Levenstein'))</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;attention&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">2</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="5">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;attenuation&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="3">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;detention&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="2">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;intention&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="4">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;mention&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">3</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test ldidyoumean batery-Levenstein" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>SELECT * FROM TABLE(ldidyoumean('DICC_LIDX', 'batery', 10, 'b', 'Levenstein'))</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;battery&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="2">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;watery&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="3">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;bravery&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="4">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;mastery&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="5">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;water&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">3</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="6">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;later&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="7">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;barter&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="8">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;lately&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="9">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;category&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="10">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;flattery&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test ldidyoumean batery-NGram" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>SELECT * FROM TABLE(ldidyoumean('DICC_LIDX', 'batery', 20, 'b', 'NGram'))</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;battery&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="2">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;watery&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="3">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;bravery&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="4">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;lately&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="5">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;barter&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="6">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;later&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="7">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;battle&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">3</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="8">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;bathe&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">2</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="9">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;water&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">3</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="10">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;bribery&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="11">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;lateral&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="12">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;mastery&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="13">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;pattern&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">2</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="14">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;bathroom&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">2</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="15">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;flattery&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="16">
+      <col id="1" name="TERM" type="VARCHAR">&lt;b&gt;bilateral&lt;/b&gt;</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test didyoumean.suggest" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select instr(didyoumean.suggest('DICC_LIDX','reyect injetion','b','Jaro'),'reject') suggestion from dual</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SUGGESTION" type="NUMERIC">4</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+  <teardown>
+    <sql><stmt>drop table dicc</stmt></sql>
+  </teardown>
+</sqlunit>
+

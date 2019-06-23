@@ -1,0 +1,1191 @@
+<?xml version="1.0"?>
+<project name="ols" default="install-ols">
+
+  <property name="env" environment="env" value="env"/>
+  <property name="ORACLE_HOME" value="${env.ORACLE_HOME}"/>
+  <!-- for test suites override using -D java flag-->
+  <property name="db.usr" value="LUCENE"/>
+  <property name="db.pwd" value="LUCENE"/>
+  <property name="db.tbl" value="USERS"/>
+  <property name="db.tmp" value="TEMP"/>
+  <property name="SQLPlus" value="sqlplus"/>
+  <property name="Wrap" value="wrap"/>
+  <property name="lucene-version" value="4.0-SNAPSHOT"/>
+  <property name="base-version" value="4.0-SNAPSHOT"/>
+  <property name="ols-version" value="2.0.5"/>
+  <property name="base-dir" value="../lucene"/>
+  <property name="solr-dir" value=".."/>
+  <property name="build-dir" value="${base-dir}/build"/>
+  <property name="tmp-dir" value="${build-dir}/tmp"/>
+  <property name="package-dir" value="${tmp-dir}/ols"/>
+  <property name="solr-dist" value="${solr-dir}/solr/dist"/>
+  <property name="solr-lib" value="${solr-dir}/solr/core/lib"/>
+  <property name="solrj-lib" value="${solr-dir}/solr/solrj/lib"/>
+
+  <!-- Background server configurations -->
+  <property name="db.searcher.job"  value="${db.usr}.IndexScanServJob#1"/>
+  <property name="db.searcher.port" value="1099"/>
+  <property name="db.updater.job"  value="${db.usr}.IndexUpdateServJob#1"/>
+  <property name="db.updater.port" value="1098"/>
+  <property name="db.servlet.job"  value="${db.usr}.SolrServletServ#1"/>
+  <property name="db.servlet.port" value="9099"/>
+
+  <description>
+    Lucene/Solr Oracle Domain Index
+  </description>
+
+  <path id="junit.jar">
+    <pathelement location="${base-dir}/lib/${junit.jar}" />
+  </path>
+
+  <path id="codec.jar">
+    <pathelement location="${solr-lib}/commons-codec-1.7.jar" />
+  </path>
+
+  <path id="httpclient.jar">
+    <pathelement location="lib/commons-httpclient-3.1.jar" />
+  </path>
+
+  <path id="logging.jar">
+    <pathelement location="lib/commons-logging-1.1.1.jar" />
+  </path>
+  
+  <path id="log4j.jar">
+    <pathelement location="lib/log4j-1.2.16.jar" />
+  </path>
+
+  <path id="slf4j.jar">
+    <pathelement location="${solrj-lib}/slf4j-api-1.6.4.jar" />
+  </path>
+
+  <path id="jdom.jar">
+    <pathelement location="lib/jdom-1.0.jar" />
+  </path>
+
+  <path id="xercesImpl.jar">
+    <pathelement location="lib/xercesImpl-2.9.1.jar" />
+  </path>
+
+  <path id="servlet.jar">
+	  <pathelement location="lib/servlet.jar" />
+  </path>
+
+  <path id="CartridgeServices.jar">
+    <pathelement location="lib/CartridgeServices.jar" />
+  </path>
+
+  <path id="ODCI.jar">
+	  <pathelement location="lib/ODCI.jar" />
+  </path>
+  
+  <path id="servlet.jar">
+	  <pathelement location="lib/servlet.jar" />
+  </path>
+
+  <!-- 12c libs -->
+  <path id="ojdbc6.jar">
+	  <pathelement location="lib/ojdbc6.jar" />
+  </path>
+  
+  <path id="runtime12.jar">
+	  <pathelement location="lib/runtime12.jar" />
+  </path>
+  
+  <path id="xdb.jar">
+	  <pathelement location="lib/xdb.jar" />
+  </path>
+  
+  <path id="xmlparserv2.jar">
+	  <pathelement location="lib/xmlparserv2.jar" />
+  </path>
+  
+  <path id="aurora.zip">
+	  <pathelement location="lib/aurora.zip" />
+  </path>
+  
+  <path id="core-test.jar">
+	  <pathelement location="${build-dir}/lucene-${lucene-version}-test.jar" />
+  </path>
+  
+  <path id="lucene-queries.jar">
+	  <pathelement location="${build-dir}/queries/lucene-queries-${lucene-version}.jar" />
+  </path>
+  
+  <path id="lucene-analysis.jar">
+	  <pathelement location="${build-dir}/analysis/common/lucene-analyzers-common-${lucene-version}.jar" />
+  </path>
+  
+  <path id="solr-core.jar">
+	  <pathelement location="${solr-dist}/apache-solr-core-${lucene-version}.jar" />
+  </path>
+  
+  <path id="solr-solrj.jar">
+	  <pathelement location="${solr-dist}/apache-solr-solrj-${lucene-version}.jar" />
+  </path>
+  
+  <path id="lucene-memory.jar">
+	  <pathelement location="${build-dir}/memory/lucene-memory-${lucene-version}.jar" />
+  </path>
+  
+  <path id="lucene-highlighter.jar">
+	  <pathelement location="${build-dir}/highlighter/lucene-highlighter-${lucene-version}.jar" />
+  </path>
+  
+  <path id="lucene-suggest.jar">
+	  <pathelement location="${build-dir}/suggest/lucene-suggest-${lucene-version}.jar" />
+  </path>
+  
+  <path id="lucene-queryparser.jar">
+	  <pathelement location="${build-dir}/queryparser/lucene-queryparser-${lucene-version}.jar" />
+  </path>
+  
+  <available file="${base-dir}/lib/${junit.jar}" property="junit.jar.exists"/>
+  
+  <available file="lib/jdom-1.0.jar" property="jdom.jar.exists"/>
+
+  <available file="lib/log4j-1.2.16.jar" property="log4j.jar.exists"/>
+
+  <available file="lib/xercesImpl-2.9.1.jar" property="xercesImpl.jar.exists"/>
+
+  <available file="lib/commons-httpclient-3.1.jar" property="httpclient.jar.exists"/>
+
+  <available file="lib/commons-logging-1.1.1.jar" property="logging.jar.exists"/>
+  
+  <available classname="oracle.CartridgeServices.ContextManager" property="CartridgeServices.jar.exists">
+	  <classpath refid="CartridgeServices.jar" />
+  </available>
+
+  <available classname="oracle.ODCI.ODCIEnv" property="ODCI.jar.exists">
+	  <classpath refid="ODCI.jar" />
+  </available>
+  
+  <available classname="javax.servlet.Servlet" property="servlet.jar.exists">
+	  <classpath refid="servlet.jar" />
+  </available>
+
+  <available classname="oracle.jdbc.driver.OracleDriver" property="ojdbc6.jar.exists">
+	  <classpath refid="ojdbc6.jar" />
+  </available>
+  
+  <available classname="oracle.sql.NString" property="runtime12.jar.exists">
+	  <classpath refid="runtime12.jar" />
+  </available>
+  
+  <available classname="oracle.xdb.XMLType" property="xdb.jar.exists">
+	  <classpath refid="xdb.jar" />
+  </available>
+  
+  <available classname="oracle.xml.parser.v2.DocumentBuilder" property="xmlparserv2.jar.exists">
+	  <classpath refid="xmlparserv2.jar" />
+  </available>
+
+  <available classname="oracle.aurora.vm.OracleRuntime" property="aurora.zip.exists">
+	  <classpath refid="aurora.zip" />
+  </available>
+
+  <path id="additional.dependencies">
+    <path refid="CartridgeServices.jar"/>
+    <path refid="ODCI.jar"/>
+    <path refid="servlet.jar"/>
+    <path refid="ojdbc6.jar"/>
+    <path refid="runtime12.jar"/>
+    <path refid="xdb.jar"/>
+    <path refid="xmlparserv2.jar"/>
+    <path refid="aurora.zip"/>
+    <path refid="junit.jar"/>
+    <path refid="codec.jar"/>
+    <path refid="logging.jar"/>
+    <path refid="httpclient.jar"/>
+    <path refid="log4j.jar"/>
+    <path refid="jdom.jar"/>
+    <path refid="xercesImpl.jar"/>
+    <path refid="lucene-queries.jar"/>
+    <path refid="lucene-analysis.jar"/>
+    <path refid="lucene-memory.jar"/>
+    <path refid="lucene-highlighter.jar"/>
+    <path refid="lucene-suggest.jar"/>
+    <path refid="lucene-queryparser.jar"/>
+    <path refid="slf4j.jar"/>
+    <path refid="solr-core.jar"/>
+    <path refid="solr-solrj.jar"/>
+  </path>
+  
+  <pathconvert property="project.classpath"
+	       targetos="unix"
+	       refid="additional.dependencies"
+	       />
+  
+  <property name="build.dir" location="${build-dir}/ols" />
+  <property name="dist.dir" location="${base-dir}/ols" />
+
+  <import file="../lucene/module-build.xml" />
+
+  <import file="loadjava.xml"/>
+  <import file="jpub.xml"/>
+
+  <path id="lucene.util">
+	  <pathelement location="${build-dir}/core/lucene-core-${version}-test.jar"/>
+  </path>
+  
+  <target name="get-jdom-jar" unless="jdom.jar.exists">
+    <get dest="lib/jdom-1.0.jar" src="http://central.maven.org/maven2/jdom/jdom/1.0/jdom-1.0.jar"/>
+  </target>
+
+  <target name="get-log4j-jar" unless="log4j.jar.exists">
+    <get dest="lib/log4j-1.2.16.jar" src="http://central.maven.org/maven2/log4j/log4j/1.2.16/log4j-1.2.16.jar"/>
+  </target>
+
+  <target name="get-httpclient-jar" unless="httpclient.jar.exists">
+    <get dest="lib/commons-httpclient-3.1.jar" src="http://central.maven.org/maven2/commons-httpclient/commons-httpclient/3.1/commons-httpclient-3.1.jar"/>
+  </target>
+
+  <target name="get-logging-jar" unless="logging.jar.exists">
+    <get dest="lib/commons-logging-1.1.1.jar" src="http://central.maven.org/maven2/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar"/>
+  </target>
+  
+  <target name="get-xercesImpl-jar" unless="xercesImpl.jar.exists">
+    <get dest="lib/xercesImpl-2.9.1.jar" src="http://central.maven.org/maven2/xerces/xercesImpl/2.9.1/xercesImpl-2.9.1.jar"/>
+  </target>
+
+  <target name="get-CartridgeServices-jar" unless="CartridgeServices.jar.exists">
+    <copy file="${ORACLE_HOME}/rdbms/jlib/CartridgeServices.jar" todir="lib"/>
+  </target>
+
+  <target name="get-ODCI-jar" unless="ODCI.jar.exists">
+    <copy file="${ORACLE_HOME}/rdbms/jlib/ODCI.jar" todir="lib"/>
+  </target>
+  
+  <target name="generate-ODCI-jar" 
+          description="Generate a new ODCI.jar file with ODCI types wrappers using JPublisher">
+    <jpub-infile
+      login="${dba.usr}/${dba.pwd}@${db.str}"
+      dir="tmp"
+      package="oracle.ODCI"
+      file="../db/ODCI.in"/>
+    <jar destfile="tmp/ODCI.jar"
+       basedir="tmp"
+       includes="**/*.class"
+     />
+  </target>
+  
+  <target name="get-servlet-jar" unless="servlet.jar.exists">
+    <copy file="${ORACLE_HOME}/rdbms/jlib/servlet.jar" todir="lib"/>
+  </target>
+  
+  <target name="get-ojdbc6-jar" unless="ojdbc6.jar.exists">
+    <copy file="${ORACLE_HOME}/jdbc/lib/ojdbc6.jar" todir="lib"/>
+  </target>
+  
+  <target name="get-runtime12-jar" unless="runtime12.jar.exists">
+    <copy file="${ORACLE_HOME}/sqlj/lib/runtime12.jar" todir="lib"/>
+  </target>
+  
+  <target name="get-xdb-jar" unless="xdb.jar.exists">
+    <copy file="${ORACLE_HOME}/rdbms/jlib/xdb.jar" todir="lib"/>
+  </target>
+  
+  <target name="get-xmlparserv2-jar" unless="xmlparserv2.jar.exists">
+    <copy file="${ORACLE_HOME}/lib/xmlparserv2.jar" todir="lib"/>
+  </target>
+  
+  <target name="get-aurora-zip" unless="aurora.zip.exists">
+    <copy file="${ORACLE_HOME}/javavm/lib/aurora.zip" todir="lib"/>
+  </target>
+  
+  <taskdef resource="net/sf/antcontrib/antlib.xml" />
+
+  <taskdef name="sqlunit" classname="net.sourceforge.sqlunit.ant.SqlunitTask">
+     <classpath refid="classpath"/>
+     <classpath>
+        <fileset dir="bin">
+           <include name="sqlunit-5.0.jar" />
+        </fileset>
+     </classpath>
+  </taskdef>
+  
+  <target name="rmic-index-scan">
+    <rmic base="${build.dir}/classes/java" 
+          includes="**/IndexScanServ.class">
+          <classpath refid="classpath"/>
+    </rmic>
+    <rmic base="${build.dir}/classes/java" 
+          includes="**/IndexUpdateServ.class">
+          <classpath refid="classpath"/>
+    </rmic>
+  </target>
+  
+  <target name="compile-core" 
+          depends="build-core, build-analysis, build-memory, build-highlighter, build-suggest, build-queryparser, build-queries, common.compile-core, rmic-index-scan" />
+
+  <target name="compile-test" depends="compile-core, build-core-test">
+	  <compile
+		  srcdir="src/test"
+		  destdir="${build.dir}/classes/test">
+		  <classpath refid="test.classpath"/>
+		  <classpath refid="lucene.util"/>
+	  </compile>
+  </target>
+	  
+  <target name="jar-test" depends="compile-test">
+	  <jar
+	      destfile="${build.dir}/${final.name}-test.jar"
+	      basedir="${build.dir}/classes/test"
+	      excludes="**/*.java"
+	      />
+  </target>
+  
+  <target name="ols-test">
+    <echoproperties/>
+    <antcall target="test">
+      <reference refid="ols.test.path" torefid="classpath"/>
+    </antcall>
+  </target>
+  
+  <target name="create-user">
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db" failonerror="true">
+      <arg value="${dba.usr}/${dba.pwd}@${db.str} as sysdba"/>
+      <arg value="@create-user"/>
+      <arg value="${db.tbl}"/>
+      <arg value="${db.tmp}"/>
+    </exec>
+  </target>
+
+  <target name="drop-jobs">
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db" failonerror="true">
+      <arg value="${dba.usr}/${dba.pwd}@${db.str} as sysdba"/>
+      <arg value="@drop-jobs"/>
+    </exec>
+  </target>
+
+  <target name="disable-jobs">
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db" failonerror="true">
+      <arg value="${dba.usr}/${dba.pwd}@${db.str} as sysdba"/>
+      <arg value="@disable-jobs"/>
+    </exec>
+  </target>
+
+  <target name="create-searcher-job">
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db" failonerror="true">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@create-job"/>
+      <arg value="${db.searcher.job}"/>
+      <arg value="LUCENE.IndexScanServ"/>
+      <arg value="${db.searcher.port}"/>
+      <arg value="WARNING"/>
+      <arg value="0"/>
+      <arg value="10000"/> <!-- sleep between cleanup 10 sec. -->
+    </exec>
+  </target>
+  
+  <target name="create-updater-job">
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db" failonerror="true">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@create-job"/>
+      <arg value="${db.updater.job}"/>
+      <arg value="LUCENE.IndexUpdateServ"/>
+      <arg value="${db.updater.port}"/>
+      <arg value="WARNING"/>
+      <arg value="0"/>
+      <arg value="100"/> <!-- tick time value of AutoCommitMaxTime 0.1 sec. -->
+    </exec>
+  </target>
+
+  <target name="create-servlet-job">
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db" failonerror="true">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@create-job"/>
+      <arg value="${db.servlet.job}"/>
+      <arg value="LUCENE.SolrServletServ"/>
+      <arg value="${db.servlet.port}"/>
+      <arg value="INFO"/> <!-- IF ALL, SQL TRACE is enabled all log is configured using logging servlet -->
+      <arg value="0"/> <!-- if <> 0 then jmx is enabled on this port number -->
+      <arg value="0"/> <!-- arg not used -->
+    </exec>
+  </target>
+
+  <target name="create-lucene-role">
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db" failonerror="true">
+      <arg value="${dba.usr}/${dba.pwd}@${db.str} as sysdba"/>
+      <arg value="@create-lucene-role"/>
+    </exec>
+  </target>
+
+  <target name="enable-jobs">
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db" failonerror="true">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@enable-searcher"/>
+    </exec>
+  </target>
+
+  <target name="grant-any-job" description="Give grant any job to lucene">
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${dba.usr}/${dba.pwd}@${db.str} as sysdba"/>
+      <arg value="@grant-any-job"/>
+    </exec>
+  </target>
+
+  <target name="load-extra-libs" depends="get-logging-jar,get-httpclient-jar">
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="lib/log4j-1.2.16.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-lib}/log4j-over-slf4j-1.6.4.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="lib/commons-logging-1.1.1.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-lib}/slf4j-jdk14-1.6.4.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-lib}/slf4j-api-1.6.4.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-lib}/jcl-over-slf4j-1.6.4.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${base-dir}/lib/${junit.jar}"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-lib}/commons-codec-1.7.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-lib}/commons-io-2.1.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-lib}/commons-fileupload-1.2.1.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="lib/commons-httpclient-3.1.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="lib/jdom-1.0.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${base-dir}/sandbox/lib/jakarta-regexp-1.4.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-lib}/wstx-asl-3.2.7.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-lib}/commons-lang-2.6.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-lib}/commons-collections-3.2.1.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-lib}/commons-beanutils-1.7.0.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-lib}/velocity-1.6.4.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-lib}/velocity-tools-2.0.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solrj-lib}/zookeeper-3.3.6.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solrj-lib}/httpcore-4.1.4.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solrj-lib}/httpclient-4.1.3.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solrj-lib}/httpmime-4.1.3.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-lib}/spatial4j-0.3.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-lib}/guava-r05.jar"
+      failonerror="false" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="bin/WebServer.jar"
+      failonerror="true" />
+  </target>
+
+  <target name="load-solr-core">
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-dist}/apache-solr-core-4.0-SNAPSHOT.jar"
+      failonerror="true" />
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${solr-dist}/apache-solr-solrj-4.0-SNAPSHOT.jar"
+      failonerror="true" />
+  </target>
+  
+  <target name="load-lucene-core" depends="jar-core">
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/core/lucene-core-${version}.jar"/>
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/queries/lucene-queries-${version}.jar"/>
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/queryparser/lucene-queryparser-${version}.jar"/>
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/analysis/common/lucene-analyzers-common-${version}.jar"/>
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/memory/lucene-memory-${version}.jar"/>
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/highlighter/lucene-highlighter-${version}.jar"/>
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/suggest/lucene-suggest-${version}.jar"/>
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/queryparser/lucene-queryparser-${version}.jar"/>
+    <!-- Solr-core required jars -->
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/analysis/phonetic/lucene-analyzers-phonetic-${version}.jar"/>
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/misc/lucene-misc-${version}.jar"/>
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/spatial/lucene-spatial-${version}.jar"/>
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/grouping/lucene-grouping-${version}.jar"/>
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/codecs/lucene-codecs-${version}.jar"/>
+  </target>
+
+  <target name="load-ols" depends="disable-jobs,jar-core">
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/ols/lucene-ols-${version}.jar"
+      resolve="r"/>
+    <loadjava
+      login="${db.usr}/${db.pwd}@${db.str}"
+      dir="db/"
+      file="solrservlet.properties"
+      failonerror="false"/>
+    <loadjava
+      login="${db.usr}/${db.pwd}@${db.str}"
+      dir="db/"
+      file="solrfbservlet.properties"
+      failonerror="false"/>
+    <loadjava
+      login="${db.usr}/${db.pwd}@${db.str}"
+      dir="src/java/"
+      file="com/scotas/license/pubkey.der"
+      failonerror="true"/>
+    <loadjava
+      login="${db.usr}/${db.pwd}@${db.str}"
+      dir="src/java/"
+      file="com/scotas/license/valid.ols"
+      failonerror="true"/>
+    <loadjava
+      login="${db.usr}/${db.pwd}@${db.str}"
+      dir="bin/"
+      file="META-INF/services/org.apache.lucene.codecs.Codec"
+      failonerror="true"/>
+    <loadjava
+      login="${db.usr}/${db.pwd}@${db.str}"
+      dir="bin/"
+      file="META-INF/services/org.apache.lucene.codecs.PostingsFormat"
+      failonerror="true"/>
+  </target>
+
+  <target name="load-ols-test" depends="jar-test">
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/core/lucene-core-${version}-test.jar"
+      failonerror="false"
+      resolve="r"/>
+    <loadjava-with-public-synonym
+      login="${db.usr}/${db.pwd}@${db.str}"
+      file="${build-dir}/ols/lucene-ols-${version}-test.jar"
+      failonerror="false"
+      resolve="r"/>
+  </target>
+
+  <target name="load-solr-resource-test">
+    <loadjava
+      login="${db.usr}/${db.pwd}@${db.str}"
+      dir="src/test"
+      file="solrconfig.xml"/>
+    <loadjava
+      login="${db.usr}/${db.pwd}@${db.str}"
+      dir="src/test"
+      file="schema.xml"/>
+    <loadjava
+      login="${db.usr}/${db.pwd}@${db.str}"
+      dir="src/test"
+      file="elevate.xml"/>
+    <loadjava
+      login="${db.usr}/${db.pwd}@${db.str}"
+      dir="src/test"
+      file="protwords.txt"/>
+    <loadjava
+      login="${db.usr}/${db.pwd}@${db.str}"
+      dir="src/test"
+      file="stopwords.txt"/>
+    <loadjava
+      login="${db.usr}/${db.pwd}@${db.str}"
+      dir="src/test"
+      file="synonyms.txt"/>
+  </target>
+
+  <target name="test-lucene">
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@JUnitCallSpec"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@OJVMTestSuite"/>
+      <arg value="${dev.version}"/>
+    </exec>
+  </target>
+
+  <target name="create-domain-index">
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@LuceneDomainIndexCommonTypes"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@LuceneDomainIndexCommonTypes-bdy"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@LuceneDomainIndex"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@LuceneDomainAdm"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@MoreLikeThis"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@PkgParallel"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@LuceneDomainIndex-bdy"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@LuceneDomainAdm-bdy"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@MoreLikeThis-bdy"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@CreateDomainIndexType"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@CreatePipelineFunction"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@CreatePipelineFunction-bdy"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@CreateAggregateFunction"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@CreateAggregateFunction-bdy"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@TermPipelineFunction"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@DidYouMean"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@DidYouMean-bdy"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@AutoCompleteFunction"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@AutoCompleteFunction-bdy"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@LuceneDomainIndexFreqTerms"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@LuceneDomainIndexFreqTerms-bdy"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@DidYouMeanType"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@DidYouMeanType-bdy"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@LuceneDomainIndexSimilarity"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@LuceneDomainIndexSimilarity-bdy"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@SolrDomainIndex"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@SolrDomainIndex-bdy"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@SolrDomainIndexType"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@SolrFacetsType"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@SolrFacetsType-bdy"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@SolrFlashbackAdm"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@SolrFlashbackAdm-bdy.plb"/>
+    </exec>
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${dba.usr}/${dba.pwd}@${db.str} as sysdba"/>
+      <arg value="@create-sys-triggers"/>
+    </exec>
+  </target>
+
+  <target name="test-ols-clob" description="Run Test on Domain Index functionality">
+   <sqlunit haltOnFailure="false" debug="false" logformat="default"
+            logfile="tmp/sqlunit-test-clob.txt">
+      <fileset dir="db">
+	      <include name="testClob.xml" />
+      </fileset>
+    </sqlunit>
+  </target>
+
+  <target name="test-ols-dicc" description="Run Test on Domain Index functionality">
+   <sqlunit haltOnFailure="false" debug="false" logformat="default"
+            logfile="tmp/sqlunit-test-dicc.txt">
+      <fileset dir="db">
+	      <include name="testDicc.xml" />
+      </fileset>
+    </sqlunit>
+  </target>
+
+  <target name="test-ols-emails" description="Run Test on Domain Index functionality">
+   <sqlunit haltOnFailure="false" debug="false" logformat="default"
+            logfile="tmp/sqlunit-test-emails.txt">
+      <fileset dir="db">
+	      <include name="testEmails.xml" />
+      </fileset>
+    </sqlunit>
+  </target>
+
+  <target name="test-ols-iot" description="Run Test on Domain Index functionality">
+   <sqlunit haltOnFailure="false" debug="false" logformat="default"
+            logfile="tmp/sqlunit-test-iot.txt">
+      <fileset dir="db">
+	      <include name="testIOT.xml" />
+      </fileset>
+    </sqlunit>
+  </target>
+
+  <target name="test-ols-master-detail" description="Run Test on Domain Index functionality">
+   <sqlunit haltOnFailure="false" debug="false" logformat="default"
+            logfile="tmp/sqlunit-test-master-detail.txt">
+      <fileset dir="db">
+	      <include name="testMasterDetail.xml" />
+      </fileset>
+    </sqlunit>
+  </target>
+
+  <target name="test-ols-similarity" description="Run Test on Domain Index functionality">
+   <sqlunit haltOnFailure="false" debug="false" logformat="default"
+            logfile="tmp/sqlunit-similarity.txt">
+      <fileset dir="db">
+	      <include name="testSimilarity.xml" />
+      </fileset>
+    </sqlunit>
+  </target>
+
+  <target name="test-ols-source-small" description="Run Test on Domain Index functionality">
+   <sqlunit haltOnFailure="false" debug="false" logformat="default"
+            logfile="tmp/sqlunit-source-small.txt">
+      <fileset dir="db">
+	      <include name="testSourceSmall.xml" />
+      </fileset>
+    </sqlunit>
+  </target>
+
+  <target name="test-ols-term-vector" description="Run Test on Domain Index functionality">
+   <sqlunit haltOnFailure="false" debug="false" logformat="default"
+            logfile="tmp/sqlunit-term-vector.txt">
+      <fileset dir="db">
+	      <include name="testTermVector.xml" />
+      </fileset>
+    </sqlunit>
+  </target>
+
+  <target name="test-ols-xmltype" description="Run Test on Domain Index functionality">
+   <sqlunit haltOnFailure="false" debug="false" logformat="default"
+            logfile="tmp/sqlunit-test-xmltype.txt">
+      <fileset dir="db">
+	      <include name="testXMLType.xml" />
+      </fileset>
+    </sqlunit>
+  </target>
+  
+  <target name="test-ols-tutorial" description="Run Test on Solr Domain Index functionality">
+   <sqlunit haltOnFailure="false" debug="false" logformat="default"
+            logfile="tmp/sqlunit-test-tutorial.txt">
+      <fileset dir="db/tutorial">
+	      <include name="testTutorial.xml" />
+      </fileset>
+    </sqlunit>
+  </target>
+  
+  <target name="test-parallel" description="Run Test on Domain Index parallel functionality">
+    <junit printsummary="yes" fork="no" haltonfailure="yes" showoutput="yes">
+      <sysproperty key="db.online-mode" value="true"/>
+      <sysproperty key="db.batch-size" value="200"/>
+      <sysproperty key="db.analyzer" value="org.apache.lucene.analysis.core.StopAnalyzer"/>
+      <sysproperty key="db.usr" value="scott"/>
+      <sysproperty key="db.pwd" value="tiger"/>
+      <sysproperty key="db.str" value="xepdb1"/>
+      <classpath>
+            <pathelement location="${build-dir}/lucene-core-${version}.jar"/>
+            <pathelement location="${build-dir}/ols/lucene-ols-${version}-test.jar"/>
+            <pathelement location="${ORACLE_HOME}/jdbc/lib/ojdbc6.jar"/>
+      </classpath>      
+      <formatter type="plain"/>
+      <test name="com.scotas.lucene.index.TestDBIndexParallel"/>
+    </junit>
+  </target>
+
+  <target name="test-parallel-ols" description="Run Test on Domain Index parallel functionality">
+    <junit printsummary="yes" fork="no" haltonfailure="yes" showoutput="yes">
+      <sysproperty key="db.usr" value="scott"/>
+      <sysproperty key="db.pwd" value="tiger"/>
+      <sysproperty key="db.str" value="xepdb1"/>
+      <sysproperty key="db.online-mode" value="true"/>
+      <sysproperty key="db.commitOnSync" value="false"/>
+      <sysproperty key="db.batch-size" value="200"/>
+      <sysproperty key="db.lucene-mode" value="true"/>
+      <classpath>
+            <pathelement location="${build-dir}/lucene-core-${version}.jar"/>
+            <pathelement location="${build-dir}/ols/lucene-ols-${version}-test.jar"/>
+            <pathelement location="${ORACLE_HOME}/jdbc/lib/ojdbc6.jar"/>
+      </classpath>      
+      <formatter type="plain"/>
+      <test name="com.scotas.solr.index.TestDBIndexParallel"/>
+    </junit>
+  </target>
+
+  <target name="test-queryhits" description="Run Test on Domain Index parallel functionality">
+    <junit printsummary="yes" fork="no" haltonfailure="yes" showoutput="yes">
+      <sysproperty key="db.usr" value="scott"/>
+      <sysproperty key="db.pwd" value="tiger"/>
+      <sysproperty key="db.str" value="xepdb1"/>
+      <classpath>
+            <pathelement location="${build-dir}/ols/lucene-ols-${version}-test.jar"/>
+            <pathelement location="${ORACLE_HOME}/jdbc/lib/ojdbc6.jar"/>
+      </classpath>      
+      <formatter type="plain"/>
+      <test name="com.scotas.lucene.indexer.TestQueryHits"/>
+    </junit>
+  </target>
+
+  <target name="test-queryhits-solr" description="Run Test on Solr Domain Index query functionality">
+    <junit printsummary="yes" fork="no" haltonfailure="yes" showoutput="yes">
+      <sysproperty key="db.usr" value="LUCENE"/>
+      <sysproperty key="db.pwd" value="LUCENE"/>
+      <sysproperty key="db.str" value="xepdb1"/>
+      <classpath>
+            <pathelement location="${build-dir}/ols/lucene-ols-${version}-test.jar"/>
+            <pathelement location="${ORACLE_HOME}/jdbc/lib/ojdbc6.jar"/>
+      </classpath>      
+      <formatter type="plain"/>
+      <test name="com.scotas.solr.indexer.TestQueryHits"/>
+    </junit>
+  </target>
+
+  <target name="test-queryhits-ctx" description="Run Test on Domain Index parallel functionality">
+    <junit printsummary="yes" fork="no" haltonfailure="yes" showoutput="yes">
+      <sysproperty key="db.usr" value="LUCENE"/>
+      <sysproperty key="db.pwd" value="LUCENE"/>
+      <sysproperty key="db.str" value="xepdb1"/>
+      <classpath>
+            <pathelement location="${build-dir}/ols/lucene-ols-${version}-test.jar"/>
+            <pathelement location="${ORACLE_HOME}/jdbc/lib/ojdbc6.jar"/>
+      </classpath>      
+      <formatter type="plain"/>
+      <test name="com.scotas.lucene.indexer.TestQueryHitsCtx"/>
+    </junit>
+  </target>
+
+  <target name="install-ols"
+          description="Create an Oracle user to hold all the Lucene OJVM code and load it, also create a new domain index named LuceneDomain"
+          depends="drop-jobs,create-user,create-lucene-role,load-extra-libs,load-lucene-core,load-solr-core,load-ols,create-domain-index,grant-any-job,create-searcher-job,create-updater-job,create-servlet-job">
+  </target>
+  
+  <target name="jit-lucene-classes" description="Force to compile Java classes under Lucene schema, only for 11g">
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@compileClasses"/>
+    </exec>
+  </target>
+
+  <target name="jit-core-classes" description="Force to compile Java classes under Scotas schema, only for 11g">
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${db.usr}/${db.pwd}@${db.str}"/>
+      <arg value="@compileCoreClasses"/>
+    </exec>
+  </target>
+
+  <target name="jit-oracle-classes" description="Force to compile Java classes under Oracle schema, only for 11g">
+    <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
+      <arg value="${dba.usr}/${dba.pwd}@${db.str} as sysdba"/>
+      <arg value="@compileSysClasses"/>
+    </exec>
+  </target>
+
+  <target name="generate-bin"
+	  depends="jar-core,jar-test">
+    <delete dir="${tmp-dir}"/>
+    <mkdir  dir="${tmp-dir}"/>
+    <mkdir dir="${package-dir}"/>
+    <mkdir dir="${package-dir}/db"/>
+    <mkdir dir="${package-dir}/db/tutorial"/>
+    <mkdir dir="${package-dir}/lib"/>
+    <mkdir dir="${package-dir}/bin"/>
+    <copy todir="${package-dir}/bin">
+      <fileset dir="bin" includes="*.*"/>
+    </copy>
+    <copy todir="${package-dir}/bin/META-INF">
+      <fileset dir="bin/META-INF" includes="**/*.*"/>
+    </copy>
+    <copy todir="${package-dir}/bin/com/scotas/license">
+      <fileset dir="src/java/com/scotas/license" includes="*.ols,*.der"/>
+    </copy>
+    <copy todir="${package-dir}/lib" file="${base-dir}/test-framework/lib/${junit.jar}"/>
+    <copy todir="${package-dir}/lib" file="${base-dir}/sandbox/lib/jakarta-regexp-1.4.jar"/>
+    <copy todir="${package-dir}/lib" file="./lib/commons-logging-1.1.1.jar" />
+    <copy todir="${package-dir}/lib" file="./lib/commons-httpclient-3.1.jar"/>
+    <copy todir="${package-dir}/lib" file="./lib/xercesImpl-2.9.1.jar"/>
+    <copy todir="${package-dir}/lib" file="./lib/log4j-1.2.16.jar"/>
+    <copy todir="${package-dir}/lib" file="./lib/jdom-1.0.jar"/>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${build-dir}/core" includes="lucene-core-${version}.jar,lucene-core-${version}-test.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${build-dir}/ols" includes="lucene-ols-${version}.jar,lucene-ols-${version}-test.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${build-dir}/analysis/common" includes="lucene-analyzers-common-${version}.jar"/>
+      <fileset dir="${build-dir}/analysis/phonetic" includes="lucene-analyzers-phonetic-${version}.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${build-dir}/highlighter" includes="lucene-highlighter-${version}.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${build-dir}/memory" includes="lucene-memory-${version}.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${build-dir}/misc" includes="lucene-misc-${version}.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${build-dir}/queries" includes="lucene-queries-${version}.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${build-dir}/spatial" includes="lucene-spatial-${version}.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${build-dir}/suggest" includes="lucene-suggest-${version}.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${build-dir}/queryparser" includes="lucene-queryparser-${version}.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${build-dir}/grouping" includes="lucene-grouping-${version}.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${build-dir}/codecs" includes="lucene-codecs-${version}.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${solrj-lib}" 
+       includes="log4j-over-slf4j-1.6.4.jar,slf4j-*.jar,jcl-over-slf4j-1.6.4.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${solr-lib}" 
+       includes="commons-*.jar,spatial4j-0.3.jar,guava-r05.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${solrj-lib}" 
+       includes="commons-*.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${solrj-lib}" 
+       includes="wstx-asl-3.2.7.jar,zookeeper-3.3.6.jar,http*.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${solr-dir}/solr/contrib/velocity/lib" 
+       includes="velocity-*.jar,commons-collections-*.jar,commons-beanutils-*.jar"/>
+    </copy>
+    <copy todir="${package-dir}/lib">
+      <fileset dir="${solr-dist}" 
+       includes="apache-solr-core-${version}.jar,apache-solr-solrj-${version}.jar"/>
+    </copy>
+    <for param="file">
+      <path>
+        <fileset dir="./db" includes="*-bdy.sql"/>
+      </path>
+      <sequential>
+        <exec executable="${ORACLE_HOME}/bin/${Wrap}" dir="./db" failonerror="true">
+          <arg value="iname=@{file}"/>
+        </exec>
+      </sequential>
+    </for>
+    <copy todir="${package-dir}/db">
+      <fileset dir="./db" includes="*.sql,*.plb,*.xml,*.properties" excludes="*-bdy.sql"/>
+    </copy>
+    <copy todir="${package-dir}/db/tutorial">
+      <fileset dir="./db/tutorial" includes="**"/>
+    </copy>
+    <copy todir="${package-dir}">
+      <fileset dir="." includes="*.xml,*.txt"/>
+    </copy>
+    <copy todir="${package-dir}" overwrite="true" file="./db/build.xml">
+      <filterset>
+         <filter token="VERSION" value="${version}"/>
+         <filter token="JUNIT.JAR" value="${junit.jar}"/>
+      </filterset>
+    </copy>
+    <copy todir="${package-dir}">
+      <fileset dir="./db" includes="*.sh"/>
+    </copy>
+  </target>
+
+  <target name="package-zip"
+          description="Build ols-bin.zip distribution file"
+          depends="generate-bin">
+	  <zip destfile="${build-dir}/lucene-ols-bin-${ols-version}.zip" basedir="${tmp-dir}"/>
+          <delete>
+            <fileset dir="./db" includes="*.plb"/>
+          </delete>
+  </target>
+
+  <target name="check-and-get-ols-jar" 
+          depends="get-ODCI-jar,get-servlet-jar,get-CartridgeServices-jar,get-ojdbc6-jar,get-runtime12-jar,get-xdb-jar,get-xmlparserv2-jar,get-aurora-zip,get-logging-jar,get-httpclient-jar,get-jdom-jar,get-log4j-jar,get-xercesImpl-jar"/>
+          
+  <target name="init" depends="check-and-get-ols-jar" />
+
+  <target name="build-core" unless="core.jar.present">
+    <echo>Lucene Domain Index building dependency ${core.jar}</echo>
+    <ant antfile="build.xml" target="jar-core" inheritall="false" dir="${base-dir}" />
+  </target>
+
+  <target name="build-core-test" unless="core-test.jar.present">
+    <echo>Lucene Domain Index building dependency ${core-test.jar}</echo>
+    <ant antfile="build.xml" target="jar-test" inheritall="false" dir="${base-dir}/core" />
+  </target>
+
+  <target name="build-analysis" unless="lucene-analysis.jar.present">
+    <echo>Lucene Domain Index building dependency ${lucene-analysis.jar}</echo>
+    <ant antfile="build.xml" target="default" inheritall="false" dir="${base-dir}/analysis" />
+  </target>
+
+  <target name="build-solrj" unless="solr-solrj.jar.present">
+    <echo>Lucene Domain Index building dependency ${solr-solrj.jar}</echo>
+    <exec executable="ant" dir="${solr-dir}/solr" newenvironment="true">
+       <arg value="dist-solrj"/>
+    </exec>
+  </target>
+
+  <target name="build-solr" unless="solr-core.jar.present">
+    <echo>Lucene Domain Index building dependency ${solr-core.jar}</echo>
+    <exec executable="ant" dir="${solr-dir}/solr" newenvironment="true">
+       <arg value="dist-jar"/>
+    </exec>
+  </target>
+
+  <target name="build-memory" unless="lucene-memory.jar.present">
+    <echo>Lucene Domain Index building dependency ${lucene-memory.jar}</echo>
+    <ant antfile="build.xml" target="default" inheritall="false" dir="${base-dir}/memory" />
+  </target>
+
+  <target name="build-highlighter" unless="lucene-highlighter.jar.present">
+    <echo>Lucene Domain Index building dependency ${lucene-highlighter.jar}</echo>
+    <ant antfile="build.xml" target="default" inheritall="false" dir="${base-dir}/highlighter" />
+  </target>
+
+  <target name="build-suggest" unless="lucene-suggest.jar.present">
+    <echo>Lucene Domain Index building dependency ${lucene-suggest.jar}</echo>
+    <ant antfile="build.xml" target="default" inheritall="false" dir="${base-dir}/suggest" />
+  </target>
+
+  <target name="build-queryparser" unless="lucene-queryparser.jar.present">
+    <echo>Lucene Domain Index building dependency ${lucene-queryparser.jar}</echo>
+    <ant antfile="build.xml" target="default" inheritall="false" dir="${base-dir}/queryparser" />
+  </target>
+
+  <target name="build-queries" unless="lucene-queries.jar.present">
+    <echo>Lucene Domain Index building dependency ${lucene-queries.jar}</echo>
+    <ant antfile="build.xml" target="default" inheritall="false" dir="${base-dir}/queries" />
+  </target>
+
+</project>

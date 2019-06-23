@@ -1,0 +1,173 @@
+<?xml version="1.0"?>
+<!DOCTYPE sqlunit SYSTEM "file:bin/sqlunit.dtd">
+<sqlunit>
+  <connection extern="db/sqlunit.properties" />
+  
+  <setup>
+      <include file="db/schemaSimilarity.sql" />
+  </setup>
+
+<test name="Test Similarity" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select /*+ DOMAIN_INDEX_SORT */ lscore(1) f1,f2 from t1 where lcontains(f2, 'cefa cefa*',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="F1" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleias</col>
+    </row>
+    <row id="2">
+      <col id="1" name="F1" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleia</col>
+    </row>
+    <row id="3">
+      <col id="1" name="F1" type="NUMERIC">0.625</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleia em salva</col>
+    </row>
+    <row id="4">
+      <col id="1" name="F1" type="NUMERIC">0.625</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleias de tensão</col>
+    </row>
+    <row id="5">
+      <col id="1" name="F1" type="NUMERIC">0.625</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleias / enxaquecas</col>
+    </row>
+    <row id="6">
+      <col id="1" name="F1" type="NUMERIC">0.5</col>
+      <col id="2" name="F2" type="VARCHAR">Intoxicação por antibióticos do grupo das cefalosporinas</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test Similarity reverse order" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select lscore(1) f1,f2 from t1 where lcontains(f2, 'cefa*',1) > 0 order by lscore(1) asc</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="F1" type="NUMERIC">0.5</col>
+      <col id="2" name="F2" type="VARCHAR">Intoxicação por antibióticos do grupo das cefalosporinas</col>
+    </row>
+    <row id="2">
+      <col id="1" name="F1" type="NUMERIC">0.625</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleia em salva</col>
+    </row>
+    <row id="3">
+      <col id="1" name="F1" type="NUMERIC">0.625</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleias / enxaquecas</col>
+    </row>
+    <row id="4">
+      <col id="1" name="F1" type="NUMERIC">0.625</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleias de tensão</col>
+    </row>
+    <row id="5">
+      <col id="1" name="F1" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleias</col>
+    </row>
+    <row id="6">
+      <col id="1" name="F1" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleia</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test Similarity no rows" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select /*+ DOMAIN_INDEX_SORT */ lscore(1) f1,f2 from t1 where lcontains(f2, 'cefa',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1" rowcount="0"/>
+</result>
+</test>
+
+<test name="Test Similarity changed SimilarityMethod" failure-message="Error with Simple SELECT">
+  <prepare>
+    <sql><stmt>alter index it1 parameters('LogLevel:ALL;SimilarityMethod:org.apache.lucene.search.DefaultSimilarity')</stmt></sql>
+  </prepare>
+<sql>
+  <stmt>select /*+ DOMAIN_INDEX_SORT */ lscore(1) f1,f2 from t1 where lcontains(f2, 'cefa cefa*',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="F1" type="NUMERIC">0.4185726642608642578125</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleia</col>
+    </row>
+    <row id="2">
+      <col id="1" name="F1" type="NUMERIC">0.3058202266693115234375</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleias</col>
+    </row>
+    <row id="3">
+      <col id="1" name="F1" type="NUMERIC">0.303734958171844482421875</col>
+      <col id="2" name="F2" type="VARCHAR">Intoxicação por antibióticos do grupo das cefalosporinas</col>
+    </row>
+    <row id="4">
+      <col id="1" name="F1" type="NUMERIC">0.2616079151630401611328125</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleia em salva</col>
+    </row>
+    <row id="5">
+      <col id="1" name="F1" type="NUMERIC">0.1911376416683197021484375</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleias de tensão</col>
+    </row>
+    <row id="6">
+      <col id="1" name="F1" type="NUMERIC">0.1911376416683197021484375</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleias / enxaquecas</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test Similarity changed SimilarityMethod, reverse order" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select lscore(1) f1,f2 from t1 where lcontains(f2, 'cefa*',1) > 0 order by lscore(1) asc</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="F1" type="NUMERIC">0.456641495227813720703125</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleias de tensão</col>
+    </row>
+    <row id="2">
+      <col id="1" name="F1" type="NUMERIC">0.456641495227813720703125</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleias / enxaquecas</col>
+    </row>
+    <row id="3">
+      <col id="1" name="F1" type="NUMERIC">0.624999940395355224609375</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleia em salva</col>
+    </row>
+    <row id="4">
+      <col id="1" name="F1" type="NUMERIC">0.725644648075103759765625</col>
+      <col id="2" name="F2" type="VARCHAR">Intoxicação por antibióticos do grupo das cefalosporinas</col>
+    </row>
+    <row id="5">
+      <col id="1" name="F1" type="NUMERIC">0.730626404285430908203125</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleias</col>
+    </row>
+    <row id="6">
+      <col id="1" name="F1" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">Cefaleia</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test Similarity changed SimilarityMethod , no rows" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select /*+ DOMAIN_INDEX_SORT */ lscore(1) f1,f2 from t1 where lcontains(f2, 'cefa',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1" rowcount="0"/>
+</result>
+</test>
+
+  <teardown>
+    <sql>
+      <stmt>drop table t1</stmt>
+    </sql>
+  </teardown>
+</sqlunit>
+

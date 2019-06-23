@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<project name="ncomp" default="..." basedir=".">
+
+    <!-- $Id: ncomp.xml,v 1.1.1.1 2010/04/07 13:53:23 mochoa Exp $
+     - Requires ORACLE_HOME property defined
+     - You need to pass these properties: login file libName dir
+     - login string must be using syntax of -oci8 option of ncomp (SQLNet string).
+     - libName is valid class name, it means no "-" or "." characters
+     - dir is a temporary directory
+     - ex:
+     -   <ncomp-force
+     -     login="lucene/lucene@dev"
+     -     file="../../build/lucene-core-${version}.jar"
+     -     libName="lucene_core"
+     -     dir="${build.dir}"/>
+     -
+     -->
+
+    <path id="ncomp.classpath">
+     <pathelement path="${ORACLE_HOME}/jdbc/lib/ojdbc14.jar"/>
+     <pathelement path="${ORACLE_HOME}/javavm/lib/jaccelerator.zip"/>
+     <pathelement path="${ORACLE_HOME}/javavm/lib/ncomp.zip"/>
+     <pathelement path="${ORACLE_HOME}/javavm/jahome"/>
+    </path>
+
+    <!--
+     - This macro perform Native Compilation of Java Classes included in a given .jar
+     - file.
+     - ncomp is called with -load option
+     -->
+     <macrodef name="ncomp-load" description="Load and Perform Native Compilation of Java classes">
+        <attribute name="login" default="LOGIN NOT SET"/>
+        <attribute name="file" default="FILE NOT SET"/>
+        <attribute name="libName" default="LIB NOT SET"/>
+        <attribute name="dir" default="${build.dir}"/>
+	      <!-- load resource -->
+        <sequential>
+          <delete dir="@{dir}/ncomp"/>
+          <mkdir dir="@{dir}/ncomp"/>
+          <copy file="@{file}" tofile="@{dir}/@{libName}.jar"/>
+          <java failonerror="true" classname="oracle.jaccelerator.Ncomp" 
+                fork="yes"
+                dir="@{dir}/ncomp"
+		output="@{dir}/ncomp.log">
+                <classpath refid="ncomp.classpath" />
+                <jvmarg value="-DJA_HOME=${env.ORACLE_HOME}/javavm/jahome"/>
+                <jvmarg value="-DORACLE_HOME=${env.ORACLE_HOME}"/>
+                <jvmarg value="-DJA_LIBS_HOME=${env.ORACLE_HOME}"/>
+                <jvmarg value="-DJAVA_HOME=${env.JAVA_HOME}"/>
+                <arg value="-force"/>
+                <arg value="-load"/>
+                <arg value="-user"/>
+                <arg value="@{login}"/>
+                <arg value="-oci8"/>
+                <arg value="../@{libName}.jar"/>
+          </java>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+     - This macro perform Native Compilation of Java Classes included in a given .jar
+     - file.
+     -->
+     <macrodef name="ncomp" description="Perform Native Compilation of Java classes">
+        <attribute name="login" default="LOGIN NOT SET"/>
+        <attribute name="file" default="FILE NOT SET"/>
+        <attribute name="libName" default="LIB NOT SET"/>
+        <attribute name="dir" default="${build.dir}"/>
+	      <!-- load resource -->
+        <sequential>
+          <delete dir="@{dir}/ncomp"/>
+          <mkdir dir="@{dir}/ncomp"/>
+          <copy file="@{file}" tofile="@{dir}/@{libName}.jar"/>
+          <java failonerror="true" classname="oracle.jaccelerator.Ncomp" 
+                fork="yes"
+                dir="@{dir}/ncomp"
+		output="@{dir}/ncomp.log">
+                <classpath refid="ncomp.classpath" />
+                <jvmarg value="-DJA_HOME=${env.ORACLE_HOME}/javavm/jahome"/>
+                <jvmarg value="-DORACLE_HOME=${env.ORACLE_HOME}"/>
+                <jvmarg value="-DJA_LIBS_HOME=${env.ORACLE_HOME}"/>
+                <jvmarg value="-DJAVA_HOME=${env.JAVA_HOME}"/>
+                <arg value="-force"/>
+                <arg value="-user"/>
+                <arg value="@{login}"/>
+                <arg value="-oci8"/>
+                <arg value="../@{libName}.jar"/>
+          </java>
+        </sequential>
+    </macrodef>
+
+    <!--
+     - This macro perform Native Compilation of Java Classes included in a given .jar
+     - file.
+     -->
+     <macrodef name="statusnc" description="Check Native Compilation Status of Java classes">
+        <attribute name="login" default="LOGIN NOT SET"/>
+        <attribute name="file" default="FILE NOT SET"/>
+        <attribute name="libName" default="LIB NOT SET"/>
+        <attribute name="dir" default="${build.dir}"/>
+        <sequential>
+          <copy file="@{file}" tofile="@{dir}/@{libName}.jar"/>
+          <java failonerror="true" classname="oracle.jaccelerator.Status" 
+                fork="yes"
+                dir=".">
+                <classpath refid="ncomp.classpath" />
+                <jvmarg value="-DJA_HOME=${env.ORACLE_HOME}/javavm/jahome"/>
+                <jvmarg value="-DORACLE_HOME=${env.ORACLE_HOME}"/>
+                <jvmarg value="-DJA_LIBS_HOME=${env.ORACLE_HOME}"/>
+                <jvmarg value="-DJAVA_HOME=${env.JAVA_HOME}"/>
+                <arg value="-output"/>
+                <arg value="@{dir}/statusnc-@{libName}.txt"/>
+                <arg value="-user"/>
+                <arg value="@{login}"/>
+                <arg value="-oci8"/>
+		<arg value="@{dir}/@{libName}.jar"/>
+          </java>
+        </sequential>
+    </macrodef>
+</project>

@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<!DOCTYPE sqlunit SYSTEM "file:bin/sqlunit.dtd">
+<sqlunit>
+  <connection extern="db/sqlunit.properties" />
+  
+  <setup>
+      <include file="db/schemaTermVector.sql" />
+  </setup>
+
+  <test name="select lscore(1) from t1 where lcontains(termvector,'two',1)>0" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select lscore(1),termvector from t1 where lcontains(termvector,'two',1)>0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="c1" type="NUMERIC">0.411990344524383544921875</col>
+      <col id="2" name="c2" type="VARCHAR">one two two three three three</col>
+    </row>
+    <row id="2">
+      <col id="1" name="c1" type="NUMERIC">0.411990344524383544921875</col>
+      <col id="2" name="c2" type="VARCHAR">one two two three three three</col>
+    </row>
+    <row id="3">
+      <col id="1" name="c1" type="NUMERIC">0.411990344524383544921875</col>
+      <col id="2" name="c2" type="VARCHAR">one two two three three three</col>
+    </row>
+    <row id="4">
+      <col id="1" name="c1" type="NUMERIC">0.3433252871036529541015625</col>
+      <col id="2" name="c2" type="VARCHAR">two two three three three four four four four</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+  <!--test name="Test lfreqterms">
+    <call>
+      <stmt>{call 
+declare 
+  cn NUMBER := 0;
+  lsc NUMBER;
+  ltxt VARCHAR2(4000);
+begin
+  for c in (SELECT /*+ DOMAIN_INDEX_SORT */  termvector txt, lfreqterms(1) fqterms,lscore(1) sc 
+              from t1 where lcontains(termvector,'two',1)>0) loop
+    cn := cn + 1;
+    lsc := c.sc;
+    ltxt := c.txt;
+  end loop;
+  if cn &lt;> 4 OR round(lsc,4) &lt;> round(0.3433252871036529541015625,4) then
+     raise_application_error(-20101, 'Expected four rows and found: ' || cn||' lsc= '||lsc);
+  end if;
+end
+}</stmt>
+    </call>
+    <result/>
+  </test-->
+
+  <test name="Test deletion" failure-message="Error with Simple SELECT">
+    <prepare>
+      <sql><stmt>delete from t1 where rownum=1</stmt></sql>
+    </prepare>
+<sql>
+  <stmt>select lscore(1),termvector from t1 where lcontains(termvector,'two',1)>0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="c1" type="NUMERIC">0.411990344524383544921875</col>
+      <col id="2" name="c2" type="VARCHAR">one two two three three three</col>
+    </row>
+    <row id="2">
+      <col id="1" name="c1" type="NUMERIC">0.411990344524383544921875</col>
+      <col id="2" name="c2" type="VARCHAR">one two two three three three</col>
+    </row>
+    <row id="3">
+      <col id="1" name="c1" type="NUMERIC">0.3433252871036529541015625</col>
+      <col id="2" name="c2" type="VARCHAR">two two three three three four four four four</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+  <teardown>
+    <sql>
+      <stmt>drop table t1</stmt>
+    </sql>
+  </teardown>
+</sqlunit>
+

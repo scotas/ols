@@ -1,0 +1,385 @@
+<?xml version="1.0"?>
+<!DOCTYPE sqlunit SYSTEM "file:bin/sqlunit.dtd">
+<sqlunit>
+  <connection extern="db/sqlunit.properties" />
+  
+  <setup>
+      <include file="db/schemaMasterDetail.sql" />
+  </setup>
+
+<test name="One row example" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select * from t1 where scontains(f2, 'ravi') > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="c1" type="NUMERIC">1</col>
+      <col id="2" name="c2" type="VARCHAR">ravi</col>
+      <col id="3" name="c3" type="VARCHAR">user data1</col>
+      <col id="4" name="c4" type="NUMERIC">101</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="No rows example" failure-message="Error with empty Simple SELECT">
+<sql>
+  <stmt>select * from t1 where scontains(f2, 'aaa') > 0</stmt>
+</sql>
+<result>
+  <resultset id="1" rowcount="0"/>
+</result>
+</test>
+
+<test name="Add new rows" failure-message="Error adding new rows">
+  <prepare>
+    <sql><stmt>alter index it1 parameters('SyncMode:Deferred;NormalizeScore:true;LogLevel:ALL')</stmt></sql>
+    <sql><stmt>INSERT INTO t1 VALUES (6, 'he abhorred accents','user data6',106)</stmt></sql>
+    <sql><stmt>INSERT INTO t1 VALUES (7, 'does','user data7',107)</stmt></sql>
+  </prepare>
+  <call>
+    <stmt>{call SolrDomainIndex.sync('IT1')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<test name="Adding rows to detail table" failure-message="Error adding rows to detail table">
+  <prepare>
+    <sql><stmt>INSERT INTO t2 VALUES (106, 'extra data6',to_date('FRI, 31 AUG 2007 06:28:19 GMT','DY, dd MON YYYY HH24:MI:SS "GMT"','NLS_DATE_LANGUAGE = AMERICAN')-6)</stmt></sql>
+    <sql><stmt>INSERT INTO t2 VALUES (107, 'extra data7',to_date('FRI, 31 AUG 2007 06:28:19 GMT','DY, dd MON YYYY HH24:MI:SS "GMT"','NLS_DATE_LANGUAGE = AMERICAN')-7)</stmt></sql>
+  </prepare>
+  <call>
+    <stmt>{call SolrDomainIndex.sync('IT1')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<test name="Update master table" failure-message="Error updating master table">
+  <prepare>
+    <sql><stmt>UPDATE t1 SET f2 = 'Nipun' , f3 = 'user data33 modified' WHERE f1 = 3</stmt></sql>
+    <sql><stmt>UPDATE t1 SET f2 = f2, f3 = 'user data1 modified' WHERE f1 = 1</stmt></sql>
+  </prepare>
+  <call>
+    <stmt>{call SolrDomainIndex.sync('IT1')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<test name="Update datail table" failure-message="Error updating detail table">
+  <prepare>
+    <sql><stmt>UPDATE t2 SET f6 = 'extra data6 modified' WHERE f5 = 106</stmt></sql>
+  </prepare>
+  <call>
+    <stmt>{call SolrDomainIndex.sync('IT1')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<test name="Add new rows on master table" failure-message="Error adding new rows">
+  <prepare>
+    <sql><stmt>INSERT INTO t1 VALUES (16, 'ravi marcelo','user data16',116)</stmt></sql>
+    <sql><stmt>INSERT INTO t1 VALUES (17, 'marcelo','user data17',117)</stmt></sql>
+  </prepare>
+  <call>
+    <stmt>{call SolrDomainIndex.sync('IT1')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<test name="Add new rows on detail table" failure-message="Error adding new rows">
+  <prepare>
+    <sql><stmt>INSERT INTO t2 VALUES (116, 'extra data16',to_date('FRI, 31 AUG 2007 06:28:19 GMT','DY, dd MON YYYY HH24:MI:SS "GMT"','NLS_DATE_LANGUAGE = AMERICAN')-16)</stmt></sql>
+    <sql><stmt>INSERT INTO t2 VALUES (117, 'extra data17',to_date('FRI, 31 AUG 2007 06:28:19 GMT','DY, dd MON YYYY HH24:MI:SS "GMT"','NLS_DATE_LANGUAGE = AMERICAN')-17)</stmt></sql>
+  </prepare>
+  <call>
+    <stmt>{call SolrDomainIndex.sync('IT1')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<test name="Add new rows on master table" failure-message="Error adding new rows">
+  <prepare>
+    <sql><stmt>INSERT INTO t1 VALUES (26, 'hello world','user data26',026)</stmt></sql>
+    <sql><stmt>INSERT INTO t1 VALUES (27, 'cdrom','user data27',027)</stmt></sql>
+  </prepare>
+  <call>
+    <stmt>{call SolrDomainIndex.sync('IT1')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<test name="Add new rows on detail table" failure-message="Error adding new rows">
+  <prepare>
+    <sql><stmt>INSERT INTO t2 VALUES (026, 'extra data26',to_date('FRI, 31 AUG 2007 06:28:19 GMT','DY, dd MON YYYY HH24:MI:SS "GMT"','NLS_DATE_LANGUAGE = AMERICAN')-26)</stmt></sql>
+    <sql><stmt>INSERT INTO t2 VALUES (027, 'extra data27',to_date('FRI, 31 AUG 2007 06:28:19 GMT','DY, dd MON YYYY HH24:MI:SS "GMT"','NLS_DATE_LANGUAGE = AMERICAN')-27)</stmt></sql>
+  </prepare>
+  <call>
+    <stmt>{call SolrDomainIndex.sync('IT1')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<test name="Update master table" failure-message="Error updating master table">
+  <prepare>
+    <sql><stmt>update t1 set f2=f2 where f1 in (26,27)</stmt></sql>
+  </prepare>
+  <call>
+    <stmt>{call SolrDomainIndex.sync('IT1')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<test name="two row select" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select round(sscore(1),3) sc,f2 from t1 where scontains(f2, 'ravi',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">ravi marcelo</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">0.571</col>
+      <col id="2" name="F2" type="VARCHAR">ravi</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="one row select, f6 condition" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select round(sscore(1),3) sc,f2,f3 from t1 where scontains(f2, 'ravi AND t2_f6_tgn:"extra data1"',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">ravi</col>
+      <col id="3" name="F3" type="VARCHAR">user data1 modified</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="one row select, f7 condition" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select round(sscore(1),3) sc,f2,f3 from t1 where scontains(f2, 'ravi AND t2_f6_tgn:"extra data1-2"',1)>0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">ravi</col>
+      <col id="3" name="F3" type="VARCHAR">user data1 modified</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="two row select, f7 condition" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select round(sscore(1),3) sc,f2,f3 from t1 where scontains(f2, '(ravi OR Nipun) AND t2_f6_tgn:extra',1)>0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">Nipun</col>
+      <col id="3" name="F3" type="VARCHAR">user data33 modified</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">0.799</col>
+      <col id="2" name="F2" type="VARCHAR">ravi marcelo</col>
+      <col id="3" name="F3" type="VARCHAR">user data16</col>
+    </row>
+    <row id="3">
+      <col id="1" name="SC" type="NUMERIC">0.706</col>
+      <col id="2" name="F2" type="VARCHAR">ravi</col>
+      <col id="3" name="F3" type="VARCHAR">user data1 modified</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="two rows, qryStr: DESC(+(ravi nipun) +f7:[20070815 TO 20070830])" failure-message="Error with Complex SELECT">
+<sql>
+  <stmt>select round(sscore(1),3) sc,f2,f3,f6 from t1,t2 
+             where scontains(f2, '(ravi OR Nipun) AND t2_f6_tgn:extra',1)>0
+             and t1.f4=t2.f5 order by sscore(1) desc</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">Nipun</col>
+      <col id="3" name="F3" type="VARCHAR">user data33 modified</col>
+      <col id="4" name="F6" type="VARCHAR">extra data3</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">0.799</col>
+      <col id="2" name="F2" type="VARCHAR">ravi marcelo</col>
+      <col id="3" name="F3" type="VARCHAR">user data16</col>
+      <col id="4" name="F6" type="VARCHAR">extra data16</col>
+    </row>
+    <row id="3">
+      <col id="1" name="SC" type="NUMERIC">0.706</col>
+      <col id="2" name="F2" type="VARCHAR">ravi</col>
+      <col id="3" name="F3" type="VARCHAR">user data1 modified</col>
+      <col id="4" name="F6" type="VARCHAR">extra data1</col>
+    </row>
+    <row id="4">
+      <col id="1" name="SC" type="NUMERIC">0.706</col>
+      <col id="2" name="F2" type="VARCHAR">ravi</col>
+      <col id="3" name="F3" type="VARCHAR">user data1 modified</col>
+      <col id="4" name="F6" type="VARCHAR">extra data1-2</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="one row select, default column condition" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select round(sscore(1),3) sc, f2 from t1 where scontains(f2, 'Nipun',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">Nipun</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="two row select, f6 condition" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select round(sscore(1),3) sc, f2 from t1 where scontains(f2, 'Nipun OR t2_f6_tgn:"extra data6 modified"',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">he abhorred accents</col>
+    </row>
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">0.111</col>
+      <col id="2" name="F2" type="VARCHAR">Nipun</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="lcontains outside where after deletions" failure-message="Error with Simple SELECT">
+  <prepare>
+    <sql><stmt>DELETE FROM t1 WHERE f2 = 'ravi'</stmt></sql>
+  </prepare>
+<sql>
+  <stmt>select f2 from t1 where scontains(f2,'ravi')>0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="F2" type="VARCHAR">ravi marcelo</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="one row select, test analyzer" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select round(sscore(1),3) sc, f2 from t1 where scontains(f2, 'accent',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">he abhorred accents</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="range query on f4" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select /*+ DOMAIN_INDEX_SORT */ round(sscore(1),3) sc,f2,f4 from t1 
+             where scontains(f2,'Ravi OR f4_in:[001 TO 107]',1)>0 order by sscore(1) asc</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="3">
+      <col id="1" name="SC" type="NUMERIC">0.252</col>
+      <col id="2" name="F2" type="VARCHAR">Nipun</col>
+      <col id="3" name="F4" type="NUMERIC">103</col>
+    </row>
+    <row id="5">
+      <col id="1" name="SC" type="NUMERIC">0.252</col>
+      <col id="2" name="F2" type="VARCHAR">cdrom</col>
+      <col id="3" name="F4" type="NUMERIC">27</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">0.252</col>
+      <col id="2" name="F2" type="VARCHAR">does</col>
+      <col id="3" name="F4" type="NUMERIC">107</col>
+    </row>
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">0.252</col>
+      <col id="2" name="F2" type="VARCHAR">he abhorred accents</col>
+      <col id="3" name="F4" type="NUMERIC">106</col>
+    </row>
+    <row id="4">
+      <col id="1" name="SC" type="NUMERIC">0.252</col>
+      <col id="2" name="F2" type="VARCHAR">hello world</col>
+      <col id="3" name="F4" type="NUMERIC">26</col>
+    </row>
+    <row id="6">
+      <col id="1" name="SC" type="NUMERIC">0.309</col>
+      <col id="2" name="F2" type="VARCHAR">ravi marcelo</col>
+      <col id="3" name="F4" type="NUMERIC">116</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="range query on f4, inline sort on f3" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select /*+ DOMAIN_INDEX_SORT */ f3,f4 from t1 
+             where scontains(f2,'f4_in:[001 TO 107]','f4_in desc',1)>0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="F3" type="VARCHAR">user data33 modified</col>
+      <col id="2" name="F4" type="NUMERIC">103</col>
+    </row>
+    <row id="2">
+      <col id="1" name="F3" type="VARCHAR">user data6</col>
+      <col id="2" name="F4" type="NUMERIC">106</col>
+    </row>
+    <row id="3">
+      <col id="1" name="F3" type="VARCHAR">user data7</col>
+      <col id="2" name="F4" type="NUMERIC">107</col>
+    </row>
+    <row id="4">
+      <col id="1" name="F3" type="VARCHAR">user data26</col>
+      <col id="2" name="F4" type="NUMERIC">26</col>
+    </row>
+    <row id="5">
+      <col id="1" name="F3" type="VARCHAR">user data27</col>
+      <col id="2" name="F4" type="NUMERIC">27</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+  <teardown>
+    <sql>
+      <stmt>drop table t2</stmt>
+    </sql>
+    <sql>
+      <stmt>drop table t1</stmt>
+    </sql>
+  </teardown>
+</sqlunit>
+

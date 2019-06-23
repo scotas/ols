@@ -1,0 +1,173 @@
+<?xml version="1.0"?>
+<!DOCTYPE sqlunit SYSTEM "file:bin/sqlunit.dtd">
+<sqlunit>
+  <connection extern="db/sqlunit.properties" />
+  
+  <setup>
+      <include file="db/schemaXMLType.sql" />
+  </setup>
+
+<test name="Index not populated yet" failure-message="Error with empty Simple SELECT">
+<sql>
+  <stmt>select sscore(1) sc, JSON_VALUE(f2,'$.name') f2 from t1 where scontains(f2, 'name_tg:ravi',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1" rowcount="0"/>
+</result>
+</test>
+
+<test name="Alter index rebuild" failure-message="Error with Simple SELECT">
+  <prepare>
+    <sql><stmt>alter index it1 rebuild parameters('NormalizeScore:true;SyncMode:Deferred;LogLevel:ALL')</stmt></sql>
+    <!-- wait auto commit 5 sec -->
+    <sql><stmt>{call DBMS_LOCK.SLEEP(5)}</stmt></sql>
+  </prepare>
+<sql>
+  <stmt>select sscore(1) sc, JSON_VALUE(f2,'$.name') f2 from t1 where scontains(f2, 'name_tg:ravi',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">ravi</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="No rows example" failure-message="Error with empty Simple SELECT">
+<sql>
+  <stmt>select sscore(1) sc, JSON_VALUE(f2,'$.name') f2 from t1 where scontains(f2, 'name_tg:aaa',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1" rowcount="0"/>
+</result>
+</test>
+
+<test name="Test alter index no rebuild" failure-message="Error with Simple SELECT">
+  <prepare>
+    <sql><stmt>alter index it1 parameters('LogLevel:WARNING')</stmt></sql>
+    <sql><stmt>insert into t1 values ('6', '{"id":6,"name":"cheuk"}')</stmt></sql>
+    <sql><stmt>insert into t1 values ('7', '{"id":7,"name":"chau"}')</stmt></sql>
+    <sql><stmt>update t1 set f2 = '{"id":3,"name":"Nipun"}' where f1 = '3'</stmt></sql>
+    <sql><stmt>commit</stmt></sql>
+    <!-- wait auto commit 5 sec -->
+    <sql><stmt>{call DBMS_LOCK.SLEEP(5)}</stmt></sql>
+  </prepare>
+<sql>
+  <stmt>select sscore(1) sc, JSON_VALUE(f2,'$.name') f2 from t1 where scontains(f2, 'name_tg:Nipun',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1" rowcount="0"/>
+</result>
+</test>
+
+<test name="One row example, after background process commit changes" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select sscore(1) sc, JSON_VALUE(f2,'$.name') f2 from t1 where scontains(f2, 'name_tg:Nipun',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1" rowcount="0"/>
+</result>
+</test>
+
+<test name="disable AutoTuneMemory:false" failure-message="Error with Simple SELECT">
+  <prepare>
+    <sql><stmt>alter index it1 parameters('~LogLevel:WARNING')</stmt></sql>
+    <sql><stmt>insert into t1 values ('10', '{"id":10,"name":"ravi marcelo"}')</stmt></sql>
+    <sql><stmt>insert into t1 values ('16', '{"id":16,"name":"marcelo"}')</stmt></sql>
+    <sql><stmt>commit</stmt></sql>
+  </prepare>
+  <call>
+    <stmt>{call SolrDomainIndex.sync('IT1')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<test name="Two row example" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select sscore(1) sc, JSON_VALUE(f2,'$.name') f2 from t1 where scontains(f2, 'name_tg:ravi',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">1</col>
+      <col id="2" name="F2" type="VARCHAR">ravi</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">0.625</col>
+      <col id="2" name="F2" type="VARCHAR">ravi marcelo</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="One row example, f1 condition" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select f1, JSON_VALUE(f2,'$.name') f2 from t1 where scontains(f2, 'name_tg:ravi AND f1_ti:10',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="F1" type="VARCHAR">10</col>
+      <col id="2" name="F2" type="VARCHAR">ravi marcelo</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Count hits" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select SolrDomainIndex.countHits('IT1','name_tg:ravi') cnt from dual</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="CNT" type="NUMERIC">2</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Two row example, sort by id" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select /*+ DOMAIN_INDEX_SORT */ -1 sc ,JSON_VALUE(f2,'$.name') f2 from t1 where scontains(f2, 'name_tg:ravi','id_s desc',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="F2" type="VARCHAR">ravi marcelo</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="F2" type="VARCHAR">ravi</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="One row example, filtering deleted rows" failure-message="Error with Simple SELECT">
+  <prepare>
+    <sql><stmt>DELETE FROM t1 WHERE f1 = '1'</stmt></sql>
+  </prepare>
+<sql>
+  <stmt>select sscore(1) sc ,JSON_VALUE(f2,'$.name') f2 from t1 where scontains(f2, 'name_tg:ravi',1) > 0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">0.625</col>
+      <col id="2" name="F2" type="VARCHAR">ravi marcelo</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+  <teardown>
+    <sql>
+      <stmt>drop table t1</stmt>
+    </sql>
+  </teardown>
+</sqlunit>
+

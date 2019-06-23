@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<schema name="OLS.DEFAULT" version="1.5">
+  <types>
+    <fieldType name="string" class="solr.StrField" sortMissingLast="true" omitNorms="true"/>
+    <fieldType name="string_pulsing" class="solr.StrField" postingsFormat="Pulsing40"/>
+    <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
+    <fieldtype name="binary" class="solr.BinaryField"/>
+    <fieldType name="int" class="solr.TrieIntField" precisionStep="0" positionIncrementGap="0"/>
+    <fieldType name="float" class="solr.TrieFloatField" precisionStep="0" positionIncrementGap="0"/>
+    <fieldType name="long" class="solr.TrieLongField" precisionStep="0" positionIncrementGap="0"/>
+    <fieldType name="double" class="solr.TrieDoubleField" precisionStep="0" positionIncrementGap="0"/>
+    <fieldType name="tint" class="solr.TrieIntField" precisionStep="8" positionIncrementGap="0"/>
+    <fieldType name="tfloat" class="solr.TrieFloatField" precisionStep="8" positionIncrementGap="0"/>
+    <fieldType name="tlong" class="solr.TrieLongField" precisionStep="8" positionIncrementGap="0"/>
+    <fieldType name="tdouble" class="solr.TrieDoubleField" precisionStep="8" positionIncrementGap="0"/>
+    <fieldType name="date" class="solr.TrieDateField" precisionStep="0" positionIncrementGap="0"/>
+    <fieldType name="tdate" class="solr.TrieDateField" precisionStep="6" positionIncrementGap="0"/>
+    <fieldType name="pint" class="solr.IntField"/>
+    <fieldType name="plong" class="solr.LongField"/>
+    <fieldType name="pfloat" class="solr.FloatField"/>
+    <fieldType name="pdouble" class="solr.DoubleField"/>
+    <fieldType name="pdate" class="solr.DateField" sortMissingLast="true"/>
+    <fieldType name="random" class="solr.RandomSortField" indexed="true" />
+    <fieldType name="sint" class="solr.SortableIntField" sortMissingLast="true" omitNorms="true"/>
+    <fieldType name="slong" class="solr.SortableLongField" sortMissingLast="true" omitNorms="true"/>
+    <fieldType name="sfloat" class="solr.SortableFloatField" sortMissingLast="true" omitNorms="true"/>
+    <fieldType name="sdouble" class="solr.SortableDoubleField" sortMissingLast="true" omitNorms="true"/>
+    <fieldType name="text_ws" class="solr.TextField" positionIncrementGap="100">
+      <analyzer>
+        <tokenizer class="org.apache.lucene.analysis.core.WhitespaceTokenizerFactory"/>
+      </analyzer>
+    </fieldType>
+    <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
+      <analyzer type="index">
+        <tokenizer class="org.apache.lucene.analysis.standard.StandardTokenizerFactory"/>
+        <filter class="org.apache.lucene.analysis.core.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true"/>
+        <filter class="org.apache.lucene.analysis.core.LowerCaseFilterFactory"/>
+      </analyzer>
+      <analyzer type="query">
+        <tokenizer class="org.apache.lucene.analysis.standard.StandardTokenizerFactory"/>
+        <filter class="org.apache.lucene.analysis.core.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true"/>
+        <filter class="org.apache.lucene.analysis.synonym.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+        <filter class="org.apache.lucene.analysis.core.LowerCaseFilterFactory"/>
+      </analyzer>
+    </fieldType>
+    <fieldType name="text_general_rev" class="solr.TextField" positionIncrementGap="100">
+      <analyzer type="index">
+        <tokenizer class="org.apache.lucene.analysis.standard.StandardTokenizerFactory"/>
+        <filter class="org.apache.lucene.analysis.core.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true"/>
+        <filter class="org.apache.lucene.analysis.core.LowerCaseFilterFactory"/>
+        <filter class="solr.ReversedWildcardFilterFactory" withOriginal="true"
+           maxPosAsterisk="3" maxPosQuestion="2" maxFractionAsterisk="0.33"/>
+      </analyzer>
+      <analyzer type="query">
+        <tokenizer class="org.apache.lucene.analysis.standard.StandardTokenizerFactory"/>
+        <filter class="org.apache.lucene.analysis.core.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true"/>
+        <filter class="org.apache.lucene.analysis.synonym.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+        <filter class="org.apache.lucene.analysis.core.LowerCaseFilterFactory"/>
+      </analyzer>
+    </fieldType>
+    <fieldType name="text_en" class="solr.TextField" positionIncrementGap="100">
+      <analyzer type="index">
+        <tokenizer class="org.apache.lucene.analysis.standard.StandardTokenizerFactory"/>
+        <filter class="org.apache.lucene.analysis.core.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true"/>
+        <filter class="org.apache.lucene.analysis.core.LowerCaseFilterFactory"/>
+	<filter class="org.apache.lucene.analysis.en.EnglishPossessiveFilterFactory"/>
+        <filter class="org.apache.lucene.analysis.miscellaneous.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+        <filter class="org.apache.lucene.analysis.en.PorterStemFilterFactory"/>
+      </analyzer>
+      <analyzer type="query">
+        <tokenizer class="org.apache.lucene.analysis.standard.StandardTokenizerFactory"/>
+        <filter class="org.apache.lucene.analysis.synonym.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+        <filter class="org.apache.lucene.analysis.core.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true"/>
+        <filter class="org.apache.lucene.analysis.core.LowerCaseFilterFactory"/>
+	<filter class="org.apache.lucene.analysis.en.EnglishPossessiveFilterFactory"/>
+        <filter class="org.apache.lucene.analysis.miscellaneous.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+        <filter class="org.apache.lucene.analysis.en.PorterStemFilterFactory"/>
+      </analyzer>
+    </fieldType>
+    <fieldType name="text_en_splitting" class="solr.TextField" positionIncrementGap="100" autoGeneratePhraseQueries="true">
+      <analyzer type="index">
+        <tokenizer class="org.apache.lucene.analysis.core.WhitespaceTokenizerFactory"/>
+        <filter class="org.apache.lucene.analysis.core.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true"/>
+        <filter class="org.apache.lucene.analysis.miscellaneous.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="1" catenateNumbers="1" catenateAll="0" splitOnCaseChange="1"/>
+        <filter class="org.apache.lucene.analysis.core.LowerCaseFilterFactory"/>
+        <filter class="org.apache.lucene.analysis.miscellaneous.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+        <filter class="org.apache.lucene.analysis.en.PorterStemFilterFactory"/>
+      </analyzer>
+      <analyzer type="query">
+        <tokenizer class="org.apache.lucene.analysis.core.WhitespaceTokenizerFactory"/>
+        <filter class="org.apache.lucene.analysis.synonym.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+        <filter class="org.apache.lucene.analysis.core.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true"/>
+        <filter class="org.apache.lucene.analysis.miscellaneous.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="1"/>
+        <filter class="org.apache.lucene.analysis.core.LowerCaseFilterFactory"/>
+        <filter class="org.apache.lucene.analysis.miscellaneous.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+        <filter class="org.apache.lucene.analysis.en.PorterStemFilterFactory"/>
+      </analyzer>
+    </fieldType>
+    <fieldType name="text_ngram" class="solr.TextField" positionIncrementGap="100">
+      <analyzer>
+        <tokenizer class="org.apache.lucene.analysis.standard.StandardTokenizerFactory"/>
+        <filter class="org.apache.lucene.analysis.core.LowerCaseFilterFactory"/>
+        <filter class="org.apache.lucene.analysis.ngram.NGramFilterFactory" minGramSize="2" maxGramSize="2" />
+      </analyzer>
+    </fieldType>
+    <fieldType name="text_edge_ngram" class="solr.TextField" positionIncrementGap="100">
+      <analyzer type="index">
+        <tokenizer class="org.apache.lucene.analysis.standard.StandardTokenizerFactory"/>
+        <filter class="org.apache.lucene.analysis.core.LowerCaseFilterFactory"/>
+        <filter class="org.apache.lucene.analysis.ngram.EdgeNGramFilterFactory" minGramSize="2" maxGramSize="45" />
+      </analyzer>
+      <analyzer type="query">
+        <tokenizer class="org.apache.lucene.analysis.standard.StandardTokenizerFactory"/>
+        <filter class="org.apache.lucene.analysis.core.LowerCaseFilterFactory"/>
+      </analyzer>
+    </fieldType>
+    <fieldType name="alphaOnlySort" class="solr.TextField" sortMissingLast="true" omitNorms="true">
+      <analyzer>
+        <tokenizer class="org.apache.lucene.analysis.core.KeywordTokenizerFactory"/>
+        <filter class="org.apache.lucene.analysis.core.LowerCaseFilterFactory" />
+        <filter class="org.apache.lucene.analysis.miscellaneous.TrimFilterFactory" />
+        <filter class="org.apache.lucene.analysis.pattern.PatternReplaceFilterFactory"
+                pattern="([^a-z])" replacement="" replace="all"
+        />
+      </analyzer>
+    </fieldType>
+    <fieldtype name="phonetic" stored="false" indexed="true" class="solr.TextField" >
+      <analyzer>
+        <tokenizer class="org.apache.lucene.analysis.standard.StandardTokenizerFactory"/>
+        <filter class="org.apache.lucene.analysis.phonetic.DoubleMetaphoneFilterFactory" inject="false"/>
+      </analyzer>
+    </fieldtype>
+
+    <fieldtype name="payloads" stored="false" indexed="true" class="solr.TextField" >
+      <analyzer>
+        <tokenizer class="org.apache.lucene.analysis.core.WhitespaceTokenizerFactory"/>
+        <filter class="org.apache.lucene.analysis.payloads.DelimitedPayloadTokenFilterFactory" encoder="float"/>
+      </analyzer>
+    </fieldtype>
+    <fieldType name="lowercase" class="solr.TextField" positionIncrementGap="100">
+      <analyzer>
+        <tokenizer class="org.apache.lucene.analysis.core.KeywordTokenizerFactory"/>
+        <filter class="org.apache.lucene.analysis.core.LowerCaseFilterFactory" />
+      </analyzer>
+    </fieldType>
+    <fieldtype name="ignored" stored="false" indexed="false" multiValued="true" class="solr.StrField" />
+    <fieldType name="point" class="solr.PointType" dimension="2" subFieldSuffix="_d"/>
+    <fieldType name="location" class="solr.LatLonType" subFieldSuffix="_coordinate"/>
+    <fieldtype name="geohash" class="solr.GeoHashField"/>
+ </types>
+ <fields>
+   <field name="rowid" type="string" indexed="true" stored="true" required="true" /> 
+
+   <field name="title"    type="text_general"      indexed="true" stored="true"  multiValued="true"/>
+   <field name="text"     type="text_en_splitting" indexed="true" stored="false" multiValued="true"/>
+   <field name="features" type="text_en_splitting" indexed="true" stored="true"  multiValued="true"/>
+   <field name="text_rev" type="text_general_rev"  indexed="true" stored="false" multiValued="true"/>
+
+   <dynamicField name="*_i"    type="int"             indexed="true" stored="true"/>
+   <dynamicField name="*_in"   type="int"             indexed="true" stored="false"/>
+   <dynamicField name="*_s"    type="string"          indexed="true" stored="true"/>
+   <dynamicField name="*_sn"   type="string"          indexed="true" stored="false"/>
+   <dynamicField name="*_l"    type="long"            indexed="true" stored="true"/>
+   <dynamicField name="*_ln"   type="long"            indexed="true" stored="false"/>
+   <dynamicField name="*_t"    type="text_general"    indexed="true" stored="true"/>
+   <dynamicField name="*_tn"   type="text_general"    indexed="true" stored="false"/>
+   <dynamicField name="*_tlo"  type="lowercase"       indexed="true" stored="true"  multiValued="true"/>
+   <dynamicField name="*_tlon" type="lowercase"       indexed="true" stored="false" multiValued="true"/>
+   <dynamicField name="*_tw"   type="text_ws"         indexed="true" stored="true"  multiValued="true"/>
+   <dynamicField name="*_twn"  type="text_ws"         indexed="true" stored="false" multiValued="true"/>
+   <dynamicField name="*_tg"   type="text_general"    indexed="true" stored="true"  multiValued="true"/>
+   <dynamicField name="*_tgn"  type="text_general"    indexed="true" stored="false" multiValued="true"/>
+   <dynamicField name="*_ts"   type="string"          indexed="true" stored="true"  multiValued="true" termVectors="true"/>
+   <dynamicField name="*_tsn"  type="string"          indexed="true" stored="false" multiValued="true" termVectors="true"/>
+   <dynamicField name="*_b"    type="boolean"         indexed="true" stored="true"/>
+   <dynamicField name="*_bn"   type="boolean"         indexed="true" stored="false"/>
+   <dynamicField name="*_f"    type="float"           indexed="true" stored="true"/>
+   <dynamicField name="*_fn"   type="float"           indexed="true" stored="false"/>
+   <dynamicField name="*_d"    type="double"          indexed="true" stored="true"/>
+   <dynamicField name="*_dn"   type="double"          indexed="true" stored="false"/>
+   <dynamicField name="*_ng"   type="text_ngram"      indexed="true" stored="false"/>
+   <dynamicField name="*_eg"   type="text_edge_ngram" indexed="true" stored="false"/>
+
+   <dynamicField name="*_coordinate" type="tdouble" indexed="true"  stored="false"/>
+
+   <dynamicField name="*_dt"  type="date"     indexed="true"  stored="true"/>
+   <dynamicField name="*_dtn" type="date"     indexed="true"  stored="false"/>
+   <dynamicField name="*_p"   type="location" indexed="true" stored="true"/>
+   <dynamicField name="*_pn"  type="location" indexed="true" stored="false"/>
+
+   <dynamicField name="*_ti"   type="tint"    indexed="true"  stored="true"/>
+   <dynamicField name="*_tin"  type="tint"    indexed="true"  stored="false"/>
+   <dynamicField name="*_tl"   type="tlong"   indexed="true"  stored="true"/>
+   <dynamicField name="*_tln"  type="tlong"   indexed="true"  stored="false"/>
+   <dynamicField name="*_tf"   type="tfloat"  indexed="true"  stored="true"/>
+   <dynamicField name="*_tfn"  type="tfloat"  indexed="true"  stored="false"/>
+   <dynamicField name="*_td"   type="tdouble" indexed="true"  stored="true"/>
+   <dynamicField name="*_tdn"  type="tdouble" indexed="true"  stored="false"/>
+   <dynamicField name="*_tdt"  type="tdate"   indexed="true"  stored="true"/>
+   <dynamicField name="*_tdtn" type="tdate"   indexed="true"  stored="false"/>
+
+   <dynamicField name="*_pi"  type="pint"     indexed="true"  stored="true"/>
+   <dynamicField name="*_pin" type="pint"     indexed="true"  stored="false"/>
+
+   <dynamicField name="*_ph"  type="phonetic" indexed="true"  stored="true"/>
+   <dynamicField name="*_phn" type="phonetic" indexed="true"  stored="false"/>
+
+   <dynamicField name="*_si"  type="sint"    indexed="true"  stored="true"/>
+   <dynamicField name="*_sin" type="sint"    indexed="true"  stored="false"/>
+   <dynamicField name="*_sl"  type="slong"   indexed="true"  stored="true"/>
+   <dynamicField name="*_sln" type="slong"   indexed="true"  stored="false"/>
+   <dynamicField name="*_sf"  type="sfloat"  indexed="true"  stored="true"/>
+   <dynamicField name="*_sfn" type="sfloat"  indexed="true"  stored="false"/>
+   <dynamicField name="*_sd"  type="sdouble" indexed="true"  stored="true"/>
+   <dynamicField name="*_sdn" type="sdouble" indexed="true"  stored="false"/>
+
+   <dynamicField name="ignored_*" type="ignored" multiValued="true"/>
+   <dynamicField name="attr_*" type="text_general" indexed="true" stored="true" multiValued="true"/>
+
+   <dynamicField name="random_*" type="random" />   
+ </fields>
+ 
+ <uniqueKey>rowid</uniqueKey>
+ 
+ <defaultSearchField>text</defaultSearchField>
+ 
+ <solrQueryParser defaultOperator="OR"/>
+	   
+ <copyField source="*_t"   dest="text" maxChars="3000"/>
+ <copyField source="*_tn"  dest="text" maxChars="3000"/>
+ <copyField source="*_tw"  dest="text" maxChars="3000"/>
+ <copyField source="*_twn" dest="text" maxChars="3000"/>
+ <copyField source="*_tg"  dest="text" maxChars="3000"/>
+ <copyField source="*_tgn" dest="text" maxChars="3000"/>
+ <copyField source="*_ts"  dest="text" maxChars="3000"/>
+ <copyField source="*_tsn" dest="text" maxChars="3000"/>
+</schema>

@@ -1,0 +1,21 @@
+This is a list of required libraries to compile this extension:
+ 
+       CartridgeServices.jar
+       ODCI.jar
+       aurora.zip
+       commons-httpclient-3.1.jar
+       commons-logging-1.1.1.jar
+       jdom-1.0.jar
+       log4j-1.2.16.jar
+       ojdbc6.jar
+       runtime12.jar
+       servlet.jar
+       xdb.jar
+       xercesImpl-2.9.1.jar
+       xmlparserv2.jar
+
+All these libraries are shipped into the Oracle 18c directory, except for JUnit that can be download from Apache
+ODCI.jar should be patched first at ORACLE_HOME and before installing OLS.
+To generate an update ODCI.jar from scratch using JPublisher run this Ant target:
+  ant -Ddba.usr=sys -Ddba.pwd=sys-pwd -Ddb.str=pdb1 generate-ODCI-jar
+finally copy tmp/ODCI.jar to $ORACLE_HOME/rdbms/jlib directory

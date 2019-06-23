@@ -1,0 +1,58 @@
+2.0.1 New release with updated Solr code base 4.0.0 production
+* logging information now includes trace_identifier support
+* Added buffered queue support in LDI+
+* Sync impl. of update simple add new doc
+* Delete implementation now works with deleteByquery impl.
+* Added parameter UseFastVectorHighlighter for highlighting
+* Tested with 12cR2 (12.1.0.2.0 Production) JDK1.6/1.7
+* Added a target to generate a new ODCI.jar file according to lastest ODCI Types
+* Fixed LDI issues with TodDocs not serializable
+* Added flashback index functionality
+* Added Hearbeat functionality to automatically start dead bg process
+* Changed Updater,Searcher parameter to not to use host port, instead using 0,1,.. index
+* bg_process table now includes job_name column to identify job started
+* fb_process table tracks flashback process stared by time
+2.0.0 New release with updated Solr code base 4.0.0 production
+* Updated schema.xml template file to latest example and tutorial
+* Fix UTF8 encoded query problems
+* NRT indexing, Soft commits make updates visible, Hard commits make updates durable
+* Buffered Queue now are supported for indexes starting with B$
+* F argument in facet function requires URL encoding as in PushConnector syntax,
+  for example an space as +
+* change to use ojdbc6 in replacement of ojdbc5
+* change to use Solr 4.0.0 production
+1.2.1 New release with updated Solr code base
+* added grant for using dbms_system to output to .trc files
+* set maxCommitsToKeep to 0 in default template we have rollback in the storage
+* added support for columns of type CURSOR (ResultSet)
+* added support for columns of type TIMESTAMP, TIMESTAMPTZ and TIMESTAMPLTZ
+* added support for columns of type VARRAY, see tutorial example
+1.2.0 New release with updated Solr code base
+* added NormalizeScore parameter support
+* when enqueue errors do it in separate transaction
+* spellchecker component defined
+* removed deprecated functionality on IndexWriterConfig ic.setMaxFieldLength(maxFieldLength)
+* added stored false dynamic fields
+* use errorCode() to check for snapshot too old exception, avoid false check with DB in other languages
+* removed default logging level, change through logging.properties or Logger servlet
+* removed deprecatated setSimilarity in searcher
+* included license file manager
+* removed parallel degree parameter
+* added getJavaPoolSize to estimate RAM usage on solrconfig.xml default parameter
+1.1.0 Updated release with enhanced
+* removed ojdbc jar 10g version from classpath and change version
+* added extra logging information in RowID loader
+* support for transparent reload files when ora-01555 is raised
+* Pragma changed to work in RAC environment
+* check BatchCount parameter when process sync
+* SpellChecker configured with field title
+* SpellChecker working with DirectSolrSpellChecker implementation
+* Added varian *n for non stored field types
+* Default parameters implemented
+* added alter session rol to LUCENE to get sql trace info when LogLevel ALL
+* if SolrServlet received ALL log level enable auto-trace sql
+* Added detection for SolrServlet default daemon
+* Fixed encoded argument passed from scontains to SolrServlet by using own encode method
+* Commented some trace logging which could impact in performance
+* Removed debugQuery=true param until we format this during fetch, if not is performance impact
+1.0.0 Initial Release based on Lucene 4.0.0-snapshot core base

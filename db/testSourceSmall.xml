@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<!DOCTYPE sqlunit SYSTEM "file:bin/sqlunit.dtd">
+<sqlunit>
+  <connection extern="db/sqlunit.properties" />
+
+  <setup>
+      <include file="db/schemaSourceSmall.sql" />
+  </setup>
+  <test name="Optimize index">
+     <call>
+        <stmt>{call LuceneDomainIndex.optimize(?)}</stmt>
+        <param id="1" type="VARCHAR">SOURCE_SMALL_LIDX</param>
+      </call>
+      <result/>
+  </test>
+  <test name="Count for type">
+    <call>
+      <stmt>{call
+declare 
+   cn NUMBER;
+begin
+   select count(*) into cn from test_source_small where lcontains(text,?)>0;
+   if cn &lt; 60 then
+     raise_application_error(-20101, 'Expected less than 60 rows, but found: ' || cn);
+   end if;
+end
+}</stmt>
+      <param id="1" type="VARCHAR" inout="in">type</param>
+    </call>
+    <result/>
+  </test>
+
+  <test name="Test pagination and lscore">
+    <call>
+      <stmt>{call 
+declare 
+  cn NUMBER := 0;
+  lsc NUMBER;
+  ltxt VARCHAR2(4000);
+begin
+  for c in (select /*+ DOMAIN_INDEX_SORT */ lscore(1) sc, text txt 
+              from test_source_small where lcontains(text,'rownum:[1 TO 5] AND type',1)>0 order by lscore(1) desc) loop
+    cn := cn + 1;
+    lsc := c.sc;
+    ltxt := c.txt;
+  end loop;
+  if cn &lt;> 5 then
+     raise_application_error(-20101, 'Expected five rows, but found cn: ' || cn );
+  end if;
+  if round(lsc,4) &lt;> round(0.799999952,4) then
+     raise_application_error(-20101, 'Expected last score around 0.8, but found lsc: ' || lsc);
+  end if;
+end
+}</stmt>
+    </call>
+    <result/>
+  </test>
+
+  <test name="Count for varchar2">
+    <call>
+      <stmt>{call 
+declare 
+   cn NUMBER;
+begin
+   select count(*) into cn from test_source_small where lcontains(text,?)>0;
+   dbms_output.put('Test ');
+   if cn &lt; 230 then
+     raise_application_error(-20101, 'Expected less thant 230, but found: ' || cn);
+   end if;
+end
+}</stmt>
+      <param id="1" type="VARCHAR" inout="in">varchar2</param>
+    </call>
+    <result/>
+  </test>
+
+  <test name="Count for number">
+    <call>
+      <stmt>{call 
+declare 
+   cn NUMBER;
+begin
+   select count(*) into cn from test_source_small where lcontains(text,?)>0;
+   if cn &lt; 150 then
+     raise_application_error(-20101, 'Expected less thant 150, but found: ' || cn);
+   end if;
+end
+}</stmt>
+      <param id="1" type="VARCHAR" inout="in">number</param>
+    </call>
+    <result/>
+  </test>
+
+  <teardown>
+    <sql>
+      <stmt>drop table test_source_small</stmt>
+    </sql>
+  </teardown>
+</sqlunit>
+

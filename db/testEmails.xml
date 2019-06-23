@@ -1,0 +1,575 @@
+<?xml version="1.0"?>
+<!DOCTYPE sqlunit SYSTEM "file:bin/sqlunit.dtd">
+<sqlunit>
+  <connection extern="db/sqlunit.properties" />
+  
+  <setup>
+      <include file="db/schemaEmails.sql" />
+  </setup>
+
+<test name="Test Sync" failure-message="Error with Simple SELECT">
+  <call>
+    <stmt>{call LuceneDomainIndex.sync('EMAILBODYTEXT')}</stmt>
+  </call>
+  <result/>
+</test>
+
+<test name="Test mixed order by" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>SELECT lscore(1) sc,subject FROM emails where emailfrom like '%@gmail.com' and lcontains(bodytext,'security',1)>0 order by emaildate,lscore(1)</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">0.2414403855800628662109375</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">lucene injection</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">0.199178159236907958984375</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test score order by" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>SELECT lscore(1) sc,subject FROM emails where emailfrom like '%@gmail.com' and lcontains(bodytext,'security',1)>0 order by lscore(1)</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">0.199178159236907958984375</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">0.2414403855800628662109375</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">lucene injection</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test query by subject" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>SELECT /*+ DOMAIN_INDEX_SORT */ lscore(1) sc,subject FROM emails where emailfrom like '%@gmail.com' and lcontains(bodytext,'subject:lucene injection',1)>0 order by lscore(1)</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">0.59610462188720703125</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">0.8105208873748779296875</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">lucene injection</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test order by subject" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>SELECT lscore(1) sc,subject FROM emails where lcontains(bodytext,'security',1)>0 order by subject ASC</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">0.199178159236907958984375</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">0.22763217985630035400390625</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="3">
+      <col id="1" name="SC" type="NUMERIC">0.140840232372283935546875</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="4">
+      <col id="1" name="SC" type="NUMERIC">0.140840232372283935546875</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="5">
+      <col id="1" name="SC" type="NUMERIC">0.2414403855800628662109375</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">lucene injection</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test order by subject at index level" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>SELECT /*+ DOMAIN_INDEX_SORT */ -1 sc,subject FROM emails where lcontains(bodytext,'security','subject:ASC',1)>0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">lucene injection</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="3">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="4">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="5">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test order by subject at index level, reverse" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>SELECT /*+ DOMAIN_INDEX_SORT */ -1 sc,subject FROM emails where lcontains(bodytext,'security','subject:DESC',1)>0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="3">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="4">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="5">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">lucene injection</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test lhighlight" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>SELECT /*+ DOMAIN_INDEX_SORT */ instr(lhighlight(1),'myhighlightclass') itxt,subject FROM emails where lcontains(bodytext,'security OR mysql','subject:ASC',1)>0</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="ITXT" type="NUMERIC">34</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">lucene injection</col>
+    </row>
+    <row id="2">
+      <col id="1" name="ITXT" type="NUMERIC">30</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="3">
+      <col id="1" name="ITXT" type="NUMERIC">39</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="4">
+      <col id="1" name="ITXT" type="NUMERIC">85</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+    <row id="5">
+      <col id="1" name="ITXT" type="NUMERIC">85</col>
+      <col id="2" name="SUBJECT" type="VARCHAR">Re: lucene injection</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test phighlight" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>SELECT * FROM
+TABLE(phighlight(
+        'EMAILBODYTEXT',    -- Lucene Index to use
+        'lucene OR mysql',  -- Lucene Query Syntax, same as th argument of lcontains
+        'SUBJECT,BODYTEXT', -- columns to highlight, note that are capitalized
+        'select -1 sc,e.* from eMails e where lcontains(bodytext,''security OR mysql'',''subject:ASC'',1)>0'
+        -- text of query to execute by DBMS_SQL package
+    ))</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="EMAILFROM" type="VARCHAR">codeshepherd@gmail.com</col>
+      <col id="3" name="EMAILTO" type="VARCHAR">java-user@lucene.apache.org</col>
+      <col id="4" name="SUBJECT" type="VARCHAR">&lt;span class="myhighlightclass"&gt;lucene&lt;/span&gt; injection</col>
+      <col id="5" name="EMAILDATE" type="TIMESTAMP">2007-08-27 06:28:19.000</col>
+      <col id="6" name="BODYTEXT" type="CLOB">md5:db85d94db65069d902e921695bb68e75</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="EMAILFROM" type="VARCHAR">lucenelist2005@danielnaber.de</col>
+      <col id="3" name="EMAILTO" type="VARCHAR">java-user@lucene.apache.org</col>
+      <col id="4" name="SUBJECT" type="VARCHAR">Re: &lt;span class="myhighlightclass"&gt;lucene&lt;/span&gt; injection</col>
+      <col id="5" name="EMAILDATE" type="TIMESTAMP">2007-08-30 06:28:19.000</col>
+      <col id="6" name="BODYTEXT" type="CLOB">md5:45ea1496de2f3efea0952757eaae1b73</col>
+    </row>
+    <row id="3">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="EMAILFROM" type="VARCHAR">lucenelist2005@danielnaber.de</col>
+      <col id="3" name="EMAILTO" type="VARCHAR">java-user@lucene.apache.org</col>
+      <col id="4" name="SUBJECT" type="VARCHAR">Re: &lt;span class="myhighlightclass"&gt;lucene&lt;/span&gt; injection</col>
+      <col id="5" name="EMAILDATE" type="TIMESTAMP">2007-08-31 06:28:19.000</col>
+      <col id="6" name="BODYTEXT" type="CLOB">md5:45ea1496de2f3efea0952757eaae1b73</col>
+    </row>
+    <row id="4">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="EMAILFROM" type="VARCHAR">erik@ehatchersolutions.com</col>
+      <col id="3" name="EMAILTO" type="VARCHAR">java-user@lucene.apache.org</col>
+      <col id="4" name="SUBJECT" type="VARCHAR">Re: &lt;span class="myhighlightclass"&gt;lucene&lt;/span&gt; injection</col>
+      <col id="5" name="EMAILDATE" type="TIMESTAMP">2007-08-28 06:28:19.000</col>
+      <col id="6" name="BODYTEXT" type="CLOB">md5:71ebd78d48fb883386eb4a8f7d3bbc77</col>
+    </row>
+    <row id="5">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="EMAILFROM" type="VARCHAR">codeshepherd@gmail.com</col>
+      <col id="3" name="EMAILTO" type="VARCHAR">java-user@lucene.apache.org</col>
+      <col id="4" name="SUBJECT" type="VARCHAR">Re: &lt;span class="myhighlightclass"&gt;lucene&lt;/span&gt; injection</col>
+      <col id="5" name="EMAILDATE" type="TIMESTAMP">2007-08-29 06:28:19.000</col>
+      <col id="6" name="BODYTEXT" type="CLOB">md5:dae0bdc932d6a16a163399bfd0218aae</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<test name="Test rhighlight" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>SELECT * FROM
+TABLE(rhighlight(
+        'EMAILBODYTEXT',    -- Lucene Index to use
+        'lucene OR mysql',  -- Lucene Query Syntax, same as th argument of lcontains
+        'SUBJECT,BODYTEXT', -- columns to highlight, note that are capitalized
+        'EMAILRSET',        -- Type returned, should be TABLE OF EMAILR
+        CURSOR(select /*+ DOMAIN_INDEX_SORT FIRST_ROW */ -1 sc,e.*
+        from eMails e where lcontains(bodytext,'security OR mysql','subject:ASC',1)>0)
+        -- SYS_REFCURSOR to highlight
+    ))</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="EMAILFROM" type="VARCHAR">codeshepherd@gmail.com</col>
+      <col id="3" name="EMAILTO" type="VARCHAR">java-user@lucene.apache.org</col>
+      <col id="4" name="SUBJECT" type="VARCHAR">&lt;span class="myhighlightclass"&gt;lucene&lt;/span&gt; injection</col>
+      <col id="5" name="EMAILDATE" type="TIMESTAMP">2007-08-27 06:28:19.000</col>
+      <col id="6" name="BODYTEXT" type="CLOB">md5:db85d94db65069d902e921695bb68e75</col>
+    </row>
+    <row id="2">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="EMAILFROM" type="VARCHAR">lucenelist2005@danielnaber.de</col>
+      <col id="3" name="EMAILTO" type="VARCHAR">java-user@lucene.apache.org</col>
+      <col id="4" name="SUBJECT" type="VARCHAR">Re: &lt;span class="myhighlightclass"&gt;lucene&lt;/span&gt; injection</col>
+      <col id="5" name="EMAILDATE" type="TIMESTAMP">2007-08-30 06:28:19.000</col>
+      <col id="6" name="BODYTEXT" type="CLOB">md5:45ea1496de2f3efea0952757eaae1b73</col>
+    </row>
+    <row id="3">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="EMAILFROM" type="VARCHAR">lucenelist2005@danielnaber.de</col>
+      <col id="3" name="EMAILTO" type="VARCHAR">java-user@lucene.apache.org</col>
+      <col id="4" name="SUBJECT" type="VARCHAR">Re: &lt;span class="myhighlightclass"&gt;lucene&lt;/span&gt; injection</col>
+      <col id="5" name="EMAILDATE" type="TIMESTAMP">2007-08-31 06:28:19.000</col>
+      <col id="6" name="BODYTEXT" type="CLOB">md5:45ea1496de2f3efea0952757eaae1b73</col>
+    </row>
+    <row id="4">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="EMAILFROM" type="VARCHAR">erik@ehatchersolutions.com</col>
+      <col id="3" name="EMAILTO" type="VARCHAR">java-user@lucene.apache.org</col>
+      <col id="4" name="SUBJECT" type="VARCHAR">Re: &lt;span class="myhighlightclass"&gt;lucene&lt;/span&gt; injection</col>
+      <col id="5" name="EMAILDATE" type="TIMESTAMP">2007-08-28 06:28:19.000</col>
+      <col id="6" name="BODYTEXT" type="CLOB">md5:71ebd78d48fb883386eb4a8f7d3bbc77</col>
+    </row>
+    <row id="5">
+      <col id="1" name="SC" type="NUMERIC">-1</col>
+      <col id="2" name="EMAILFROM" type="VARCHAR">codeshepherd@gmail.com</col>
+      <col id="3" name="EMAILTO" type="VARCHAR">java-user@lucene.apache.org</col>
+      <col id="4" name="SUBJECT" type="VARCHAR">Re: &lt;span class="myhighlightclass"&gt;lucene&lt;/span&gt; injection</col>
+      <col id="5" name="EMAILDATE" type="TIMESTAMP">2007-08-29 06:28:19.000</col>
+      <col id="6" name="BODYTEXT" type="CLOB">md5:dae0bdc932d6a16a163399bfd0218aae</col>
+    </row>
+  </resultset>
+</result>
+</test>
+
+<!--test name="Test high_freq_terms" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>SELECT * FROM table(high_freq_terms('EMAILBODYTEXT','BODYTEXT',10))</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:like</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">8</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="2">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:i</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">8</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="3">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:many</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">8</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="4">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:query</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">7</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="5">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:search</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">7</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="6">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:without</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">6</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="7">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:from</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">6</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="8">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:wrote</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">6</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="9">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:any</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">6</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="10">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:you</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">5</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+  </resultset>
+</result>
+</test-->
+
+<!--test name="Test index_terms" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>SELECT * FROM table(index_terms('EMAILBODYTEXT','BODYTEXT')) where rownum &lt;= 10</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:about</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">5</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="2">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:access</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">2</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="3">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:add</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">3</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="4">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:additional</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="5">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:admin</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">2</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="6">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:also</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">2</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="7">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:am</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">5</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="8">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:analysis</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">2</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="9">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:andi</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+    <row id="10">
+      <col id="1" name="TERM" type="VARCHAR">BODYTEXT:andrzej</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">2</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+  </resultset>
+</result>
+</test-->
+
+<!--test name="Test lautocomplete 1" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select * from table(lautocomplete('EMAILBODYTEXT','dictionary','eri',5)) t</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="TERM" type="VARCHAR">erik@ehatchersolutions.com</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">1</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+  </resultset>
+</result>
+</test-->
+
+<!--test name="Test lautocomplete 2" failure-message="Error with Simple SELECT">
+<sql>
+  <stmt>select * from table(lautocomplete('EMAILBODYTEXT','dictionary','luce',5)) t</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="TERM" type="VARCHAR">lucenelist2005@danielnaber.de</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">3</col>
+      <col id="3" name="RID" type="VARCHAR">NULL</col>
+    </row>
+  </resultset>
+</result>
+</test
+
+<test name="Test lautocomplete 3 FULL MODE" failure-message="Error: Test lautocomplete 3 FULL MODE">
+ <prepare>
+    <sql><stmt>drop index emailbodytext</stmt></sql>
+    <sql><stmt>create index emailbodytext on emails(bodytext) indextype is lucene.luceneindex
+parameters('FormatCols:dictionary(ANALYZED_WITH_POSITIONS_OFFSETS);ExtraCols:subject "dictionary";PerFieldAnalyzer:dictionary(org.apache.lucene.analysis.en.EnglishAnalyzer),BODYTEXT(org.apache.lucene.analysis.StopAnalyzer);LogLevel:ALL')</stmt></sql>
+  </prepare>
+  <sql>
+    <stmt>select term, docfreq from table(lautocomplete('EMAILBODYTEXT','dictionary','boos',5,'FULL')) t</stmt>
+  </sql>
+  <result>
+    <resultset id="1">
+      <row id="1">
+        <col id="1" name="TERM" type="VARCHAR">boosting instead of sorting WAS: to boost or not to boost</col>
+        <col id="2" name="DOCFREQ" type="NUMERIC">89</col>
+      </row>
+    </resultset>
+  </result>
+</test>
+
+<test name="Test lautocomplete 4 FULL MODE" failure-message="Error: Test lautocomplete 4 FULL MODE">
+<sql>
+  <stmt>select term, docfreq from table(lautocomplete('EMAILBODYTEXT','dictionary','luc',5,'FULL')) t</stmt>
+</sql>
+<result>
+  <resultset id="1">
+    <row id="1">
+      <col id="1" name="TERM" type="VARCHAR">lucene injection</col>
+      <col id="2" name="DOCFREQ" type="NUMERIC">98</col>
+    </row>
+  </resultset>
+</result>
+</test>-->
+
+<test name="Test lhighlight(1) without wildcard" failure-message="Error: Test lhighlight(1) without wildcard">
+ <prepare>
+    <sql><stmt>create index emailsubjecttext on emails(subject) indextype is lucene.luceneindex
+parameters('HighlightColumn:wildcard;ExtraCols:subject "wildcard";PerFieldAnalyzer:SUBJECT(org.apache.lucene.analysis.en.EnglishAnalyzer),wildcard(org.apache.lucene.analysis.ext.EnglishWildcardAnalyzer);LogLevel:ALL;Analyzer:org.apache.lucene.analysis.en.EnglishAnalyzer;RewriteScore:true;SimilarityMethod:org.apache.lucene.search.WildcardSimilarity;DefaultOperator:AND;NormalizeScore:false')</stmt></sql>
+  </prepare>
+  <sql>
+    <stmt>select lhighlight(1) subject from emails where lcontains(subject,'lucene',1)>0</stmt>
+  </sql>
+  <result>
+    <resultset id="1">
+      <row id="1">
+        <col id="1" name="SUBJECT" type="VARCHAR">&lt;B&gt;lucene&lt;/B&gt; injection</col>
+      </row>
+      <row id="2">
+        <col id="1" name="SUBJECT" type="VARCHAR">Re: &lt;B&gt;lucene&lt;/B&gt; injection</col>
+      </row>
+      <row id="3">
+        <col id="1" name="SUBJECT" type="VARCHAR">Re: &lt;B&gt;lucene&lt;/B&gt; injection</col>
+      </row>
+      <row id="4">
+        <col id="1" name="SUBJECT" type="VARCHAR">Re: &lt;B&gt;lucene&lt;/B&gt; injection</col>
+      </row>
+      <row id="5">
+        <col id="1" name="SUBJECT" type="VARCHAR">Re: &lt;B&gt;lucene&lt;/B&gt; injection</col>
+      </row>
+    </resultset>
+  </result>
+</test>
+
+<test name="Test lhighlight(1) using wildcard 1" failure-message="Error: Test lhighlight(1) using wildcard 1">
+  <sql>
+    <stmt>select lhighlight(1) subject from emails where lcontains(subject,'luc*',1)>0</stmt>
+  </sql>
+  <result>
+    <resultset id="1">
+      <row id="1">
+        <col id="1" name="SUBJECT" type="VARCHAR">NULL</col>
+      </row>
+      <row id="2">
+        <col id="1" name="SUBJECT" type="VARCHAR">NULL</col>
+      </row>
+      <row id="3">
+        <col id="1" name="SUBJECT" type="VARCHAR">NULL</col>
+      </row>
+      <row id="4">
+        <col id="1" name="SUBJECT" type="VARCHAR">NULL</col>
+      </row>
+      <row id="5">
+        <col id="1" name="SUBJECT" type="VARCHAR">NULL</col>
+      </row>
+    </resultset>
+  </result>
+</test>
+
+<test name="Test lhighlight(1) using wildcard 2" failure-message="Error: Test lhighlight(1) using wildcard 2">
+  <sql>
+    <stmt>select lhighlight(1) subject from emails where lcontains(subject,'wildcard:luc*',1)>0</stmt>
+  </sql>
+  <result>
+    <resultset id="1">
+      <row id="1">
+        <col id="1" name="SUBJECT" type="VARCHAR">&lt;B&gt;lucene&lt;/B&gt; injection</col>
+      </row>
+      <row id="2">
+        <col id="1" name="SUBJECT" type="VARCHAR">Re: &lt;B&gt;lucene&lt;/B&gt; injection</col>
+      </row>
+      <row id="3">
+        <col id="1" name="SUBJECT" type="VARCHAR">Re: &lt;B&gt;lucene&lt;/B&gt; injection</col>
+      </row>
+      <row id="4">
+        <col id="1" name="SUBJECT" type="VARCHAR">Re: &lt;B&gt;lucene&lt;/B&gt; injection</col>
+      </row>
+      <row id="5">
+        <col id="1" name="SUBJECT" type="VARCHAR">Re: &lt;B&gt;lucene&lt;/B&gt; injection</col>
+      </row>
+    </resultset>
+  </result>
+</test>
+
+  <teardown>
+    <sql><stmt>drop type EMAILRSET</stmt></sql>
+    <sql><stmt>drop type EMAILR</stmt></sql>
+    <sql><stmt>drop table emails</stmt></sql>
+  </teardown>
+</sqlunit>
+
