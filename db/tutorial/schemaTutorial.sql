@@ -1,3 +1,15 @@
+/*
+SQL> create user scott identified by tiger
+  2  default tablespace users
+  3  temporary tablespace temp
+  4  quota unlimited on users;
+
+User created.
+
+SQL> grant connect,resource,luceneuser to scott;
+
+Grant succeeded.
+*/
 CREATE TYPE CAT_LIST_ARR AS VARRAY(20) OF VARCHAR2(100)
 ;
 
