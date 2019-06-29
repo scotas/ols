@@ -1,35 +1,37 @@
-How to install OLS
---------------------------------------------------------
-- 12c Binary Distribution
-Edit your ~build.properties file with your Database values, for example:
+Compiling from Source.
+- Checkout a definition for a build environment using Docker
+$ git clone https://github.com/scotas/docker-images.git
+$ cd docker-images/ols-dev-env
+$ ./buildDockerImageR5.sh
+$ cd ../..
 
-    db.str=orcl
-    dba.usr=sys
-    dba.pwd=change_on_install
+- Checkout Scotas OLS Source
+$ git clone https://github.com/scotas/ols.git
+$ docker run -ti -v "$(pwd)/ols:/home/ols" --rm ols-dev:2.0.5 bash
+[oracle@3023358b5b05 home]$ cd solr
+[oracle@3023358b5b05 solr]$ ant dist-core dist-solrj
+.....
+[oracle@3023358b5b05 solr]$ cd ../ols
+[oracle@3023358b5b05 ols]$ ant package-zip
+...
+package-zip:
+      [zip] Building zip: /home/lucene/build/lucene-ols-bin-2.0.5.zip
 
-db.str is your SQLNet connect string for your target database, check first with tnsping
-ORACLE_HOME environment setting is required and properly configured to an Oracle 11g database layout.
-Upload, install and test your code into the database
+BUILD SUCCESSFUL
+Total time: 2 minutes 14 seconds
+[oracle@3023358b5b05 ols]$ 
 
-    # ant
-    # ant test-ols-tutorial
+Installing binary distribution using Docker
+$ cd ../docker-images/sample-stacks
+$ sudo mkdir -p /home/data/db/19c-ols
+$ sudo chown 54321:54321 /home/data/db/19c-ols
+$ curl -s https://raw.githubusercontent.com/scotas/docker-images/master/ols-scripts-r5/00-unzip-ols.sh | docker config create 00-unzip-ols.sh -
+5eujc2f3aj0dbup3v77hm8043
+$ curl -s https://raw.githubusercontent.com/scotas/docker-images/master/ols-scripts-r5/01-ols-ins.sh | docker config create 01-ols-ins.sh -
+p07owsoxnd0m0z8xkkkjkip0i
+$ curl -s https://raw.githubusercontent.com/scotas/docker-images/master/ols-scripts-r5/02-clean-up-ols-files.sh | docker config create 02-clean-up-ols-files.sh -
+d6x4mo4o9szpoxn01ckwby8wc
+$ docker stack deploy -c docker-compose-ols.yml ols
+$ docker service logs -f ols_db
+....
 
-Important before installing OLS on 12c check this SGA parameters:
-SQL> show parameters job_queue_processes
-
-NAME				     TYPE	 VALUE
------------------------------------- ----------- ------------------------------
-job_queue_processes		     integer	 1000
-SQL> show parameters aq_tm_processes
-
-NAME				     TYPE	 VALUE
------------------------------------- ----------- ------------------------------
-aq_tm_processes 		     integer	 10
-SQL> show parameters java
-
-NAME				     TYPE	 VALUE
------------------------------------- ----------- ------------------------------
-java_jit_enabled		     boolean	 TRUE
-java_max_sessionspace_size	     integer	 0
-java_pool_size			     big integer 304M
-java_soft_sessionspace_limit	     integer	 0

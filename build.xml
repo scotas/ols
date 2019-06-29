@@ -906,7 +906,7 @@
       <sysproperty key="db.analyzer" value="org.apache.lucene.analysis.core.StopAnalyzer"/>
       <sysproperty key="db.usr" value="scott"/>
       <sysproperty key="db.pwd" value="tiger"/>
-      <sysproperty key="db.str" value="xepdb1"/>
+      <sysproperty key="db.str" value="orclpdb1"/>
       <classpath>
             <pathelement location="${build-dir}/lucene-core-${version}.jar"/>
             <pathelement location="${build-dir}/ols/lucene-ols-${version}-test.jar"/>
@@ -921,7 +921,7 @@
     <junit printsummary="yes" fork="no" haltonfailure="yes" showoutput="yes">
       <sysproperty key="db.usr" value="scott"/>
       <sysproperty key="db.pwd" value="tiger"/>
-      <sysproperty key="db.str" value="xepdb1"/>
+      <sysproperty key="db.str" value="orclpdb1"/>
       <sysproperty key="db.online-mode" value="true"/>
       <sysproperty key="db.commitOnSync" value="false"/>
       <sysproperty key="db.batch-size" value="200"/>
@@ -940,7 +940,7 @@
     <junit printsummary="yes" fork="no" haltonfailure="yes" showoutput="yes">
       <sysproperty key="db.usr" value="scott"/>
       <sysproperty key="db.pwd" value="tiger"/>
-      <sysproperty key="db.str" value="xepdb1"/>
+      <sysproperty key="db.str" value="orclpdb1"/>
       <classpath>
             <pathelement location="${build-dir}/ols/lucene-ols-${version}-test.jar"/>
             <pathelement location="${ORACLE_HOME}/jdbc/lib/ojdbc6.jar"/>
@@ -952,9 +952,9 @@
 
   <target name="test-queryhits-solr" description="Run Test on Solr Domain Index query functionality">
     <junit printsummary="yes" fork="no" haltonfailure="yes" showoutput="yes">
-      <sysproperty key="db.usr" value="LUCENE"/>
-      <sysproperty key="db.pwd" value="LUCENE"/>
-      <sysproperty key="db.str" value="xepdb1"/>
+      <sysproperty key="db.usr" value="scott"/>
+      <sysproperty key="db.pwd" value="tiger"/>
+      <sysproperty key="db.str" value="orclpdb1"/>
       <classpath>
             <pathelement location="${build-dir}/ols/lucene-ols-${version}-test.jar"/>
             <pathelement location="${ORACLE_HOME}/jdbc/lib/ojdbc6.jar"/>
@@ -966,9 +966,9 @@
 
   <target name="test-queryhits-ctx" description="Run Test on Domain Index parallel functionality">
     <junit printsummary="yes" fork="no" haltonfailure="yes" showoutput="yes">
-      <sysproperty key="db.usr" value="LUCENE"/>
-      <sysproperty key="db.pwd" value="LUCENE"/>
-      <sysproperty key="db.str" value="xepdb1"/>
+      <sysproperty key="db.usr" value="scott"/>
+      <sysproperty key="db.pwd" value="tiger"/>
+      <sysproperty key="db.str" value="orclpdb1"/>
       <classpath>
             <pathelement location="${build-dir}/ols/lucene-ols-${version}-test.jar"/>
             <pathelement location="${ORACLE_HOME}/jdbc/lib/ojdbc6.jar"/>
