@@ -86,7 +86,7 @@ begin
   dbms_java.grant_permission( 'LUCENE', 'SYS:java.lang.RuntimePermission', 'setContextClassLoader', '' );
   dbms_java.grant_permission( 'LUCENE', 'SYS:java.lang.RuntimePermission', 'setFactory', '' );
   dbms_java.grant_permission( 'LUCENE', 'SYS:java.net.NetPermission', 'specifyStreamHandler', '' );
-  -- AQ Role for managing QUEUE in others schemas 12cR2 required
+  -- AQ Role for managing QUEUE in others schemas 19c required
   DBMS_AQADM.GRANT_SYSTEM_PRIVILEGE('MANAGE_ANY','LUCENE',FALSE);
   commit;
 end;

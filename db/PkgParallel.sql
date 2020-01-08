@@ -64,7 +64,7 @@ begin
   v_hostname := SYS_CONTEXT('USERENV','SERVER_HOST');
   v_action   := SYS_CONTEXT('USERENV','ACTION');
   SELECT banner INTO v_version FROM v$version WHERE rownum=1;
-  if (jmxPort <> '0' AND instr(v_version,'12c')>0) then
+  if (jmxPort <> '0' AND instr(v_version,'19c')>0) then
     dbms_java.start_jmx_agent(jmxPort, 'false');
   end if;
   execute immediate 'ALTER SESSION SET tracefile_identifier = '''||v_action||'''';
@@ -95,7 +95,7 @@ begin
   v_hostname := SYS_CONTEXT('USERENV','SERVER_HOST');
   v_action   := SYS_CONTEXT('USERENV','ACTION');
   SELECT banner INTO v_version FROM v$version WHERE rownum=1;
-  if (jmxPort <> '0' AND instr(v_version,'12c')>0) then
+  if (jmxPort <> '0' AND instr(v_version,'19c')>0) then
     dbms_java.start_jmx_agent(jmxPort, 'false');
   end if;
   execute immediate 'ALTER SESSION SET tracefile_identifier = '''||v_action||'''';

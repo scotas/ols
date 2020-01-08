@@ -15,7 +15,7 @@
      <pathelement path="${ORACLE_HOME}/jdbc/lib/ojdbc6.jar"/>
      <pathelement path="${ORACLE_HOME}/rdbms/jlib/translator.jar"/>
      <pathelement path="${ORACLE_HOME}/sqlj/lib/runtime12.jar"/>
-     <!-- required jar for 18cR1 jpublisher runtime -->
+     <!-- required jar for 19c jpublisher runtime -->
      <pathelement path="${ORACLE_HOME}/md/jlib/mapbuilder.jar"/>
      <!-- required jar for 12cR2 jpublisher runtime -->
      <pathelement path="bin/converter.jar"/>

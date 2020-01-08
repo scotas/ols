@@ -82,7 +82,7 @@
 	  <pathelement location="lib/servlet.jar" />
   </path>
 
-  <!-- 12c libs -->
+  <!-- 19c libs -->
   <path id="ojdbc6.jar">
 	  <pathelement location="lib/ojdbc6.jar" />
   </path>

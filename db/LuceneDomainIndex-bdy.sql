@@ -348,8 +348,8 @@ type body LuceneDomainIndex is
   begin
     select banner into v_version from v$version where rownum=1;
     SELECT OWNER,PARTITIONED,DEGREE INTO INDEX_SCHEMA,IS_PART,PAR_DEGREE FROM ALL_INDEXES WHERE INDEX_NAME=IDX_NAME;
-    IF (IS_PART = 'YES' AND instr(v_version,'12c')>0) THEN
-      if (PAR_DEGREE > 1 AND instr(v_version,'12c')>0) then
+    IF (IS_PART = 'YES' AND instr(v_version,'19c')>0) THEN
+      if (PAR_DEGREE > 1 AND instr(v_version,'19c')>0) then
         EXECUTE IMMEDIATE 'begin run_in_parallel('''||INDEX_SCHEMA||''','''||IDX_NAME||''','||PAR_DEGREE||',''SYNC_PARTITION''); end;';
       else
         FOR P IN (SELECT PARTITION_NAME FROM ALL_IND_PARTITIONS  WHERE INDEX_OWNER=INDEX_SCHEMA AND INDEX_NAME=IDX_NAME) LOOP
@@ -366,7 +366,7 @@ type body LuceneDomainIndex is
       INDEX_SCHEMA := SYS_CONTEXT('USERENV','CURRENT_SCHEMA');
       SELECT PARTITIONED,DEGREE INTO IS_PART,PAR_DEGREE FROM ALL_INDEXES WHERE INDEX_NAME=IDX_NAME and OWNER=INDEX_SCHEMA;
       IF (IS_PART = 'YES') THEN
-        if (PAR_DEGREE > 1 AND instr(v_version,'12c')>0) then
+        if (PAR_DEGREE > 1 AND instr(v_version,'19c')>0) then
           EXECUTE IMMEDIATE 'begin run_in_parallel('''||INDEX_SCHEMA||''','''||IDX_NAME||''','||PAR_DEGREE||',''SYNC_PARTITION''); end;';
         else
           FOR P IN (SELECT PARTITION_NAME FROM ALL_IND_PARTITIONS  WHERE INDEX_OWNER=INDEX_SCHEMA AND INDEX_NAME=IDX_NAME) LOOP
@@ -509,7 +509,7 @@ type body LuceneDomainIndex is
   begin
     select banner into v_version from v$version where rownum=1;
     SELECT OWNER,PARTITIONED,DEGREE INTO INDEX_SCHEMA,IS_PART,PAR_DEGREE FROM ALL_INDEXES WHERE INDEX_NAME=IDX_NAME;
-    IF (IS_PART = 'YES' AND instr(v_version,'12c')>0) THEN
+    IF (IS_PART = 'YES' AND instr(v_version,'19c')>0) THEN
       EXECUTE IMMEDIATE 'begin run_in_parallel('''||INDEX_SCHEMA||''','''||IDX_NAME||''','||PAR_DEGREE||',''OPTIMIZE_PARTITION''); end;';
     ELSE
       OPTIMIZE(INDEX_SCHEMA,INDEX_NAME);
@@ -520,7 +520,7 @@ type body LuceneDomainIndex is
     when too_many_rows then
       INDEX_SCHEMA := SYS_CONTEXT('USERENV','CURRENT_SCHEMA');
       SELECT PARTITIONED,DEGREE INTO IS_PART,PAR_DEGREE FROM ALL_INDEXES WHERE INDEX_NAME=IDX_NAME and OWNER=INDEX_SCHEMA;
-      IF (IS_PART = 'YES' AND instr(v_version,'12c')>0) THEN
+      IF (IS_PART = 'YES' AND instr(v_version,'19c')>0) THEN
         EXECUTE IMMEDIATE 'begin run_in_parallel('''||INDEX_SCHEMA||''','''||IDX_NAME||''','||PAR_DEGREE||',''OPTIMIZE_PARTITION''); end;';
       ELSE
         OPTIMIZE(INDEX_SCHEMA,INDEX_NAME);
@@ -548,7 +548,7 @@ type body LuceneDomainIndex is
   begin
     select banner into v_version from v$version where rownum=1;
     SELECT OWNER,PARTITIONED,DEGREE INTO INDEX_SCHEMA,IS_PART,PAR_DEGREE FROM ALL_INDEXES WHERE INDEX_NAME=IDX_NAME;
-    IF (IS_PART = 'YES' AND instr(v_version,'12c')>0) THEN
+    IF (IS_PART = 'YES' AND instr(v_version,'19c')>0) THEN
       EXECUTE IMMEDIATE 'begin run_in_parallel('''||INDEX_SCHEMA||''','''||IDX_NAME||''','||PAR_DEGREE||',''REBUILD_PARTITION''); end;';
     ELSE
       REBUILD(INDEX_SCHEMA,INDEX_NAME);
@@ -559,7 +559,7 @@ type body LuceneDomainIndex is
     when too_many_rows then
       INDEX_SCHEMA := SYS_CONTEXT('USERENV','CURRENT_SCHEMA');
       SELECT PARTITIONED,DEGREE INTO IS_PART,PAR_DEGREE FROM ALL_INDEXES WHERE INDEX_NAME=IDX_NAME and OWNER=INDEX_SCHEMA;
-      IF (IS_PART = 'YES' AND instr(v_version,'12c')>0) THEN
+      IF (IS_PART = 'YES' AND instr(v_version,'19c')>0) THEN
         EXECUTE IMMEDIATE 'begin run_in_parallel('''||INDEX_SCHEMA||''','''||IDX_NAME||''','||PAR_DEGREE||',''REBUILD_PARTITION''); end;';
       ELSE
         REBUILD(INDEX_SCHEMA,INDEX_NAME);

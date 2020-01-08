@@ -1,3 +1,11 @@
+2.0.5 New release with updated Solr code base 4.0.0 production
+* Tested with 19cR3 (19.3.0-ee Production) JDK1.8
+2.0.4 New release with updated Solr code base 4.0.0 production
+* Tested with 18cXE (18.4.0-xe Production) JDK1.8
+2.0.3 New release with updated Solr code base 4.0.0 production
+* Tested with 18cR1 (18.0.0.0-ee Production) JDK1.8
+2.0.2 New release with updated Solr code base 4.0.0 production
+* Tested with 12cR2 (12.2.0.1-ee Production) JDK1.6/1.7
 2.0.1 New release with updated Solr code base 4.0.0 production
 * logging information now includes trace_identifier support
 * Added buffered queue support in LDI+
