@@ -228,23 +228,23 @@
   </path>
   
   <target name="get-jdom-jar" unless="jdom.jar.exists">
-    <get dest="lib/jdom-1.0.jar" src="http://central.maven.org/maven2/jdom/jdom/1.0/jdom-1.0.jar"/>
+    <get dest="lib/jdom-1.0.jar" src="https://repo.maven.apache.org/maven2/jdom/jdom/1.0/jdom-1.0.jar"/>
   </target>
 
   <target name="get-log4j-jar" unless="log4j.jar.exists">
-    <get dest="lib/log4j-1.2.16.jar" src="http://central.maven.org/maven2/log4j/log4j/1.2.16/log4j-1.2.16.jar"/>
+    <get dest="lib/log4j-1.2.16.jar" src="https://repo.maven.apache.org/maven2/log4j/log4j/1.2.16/log4j-1.2.16.jar"/>
   </target>
 
   <target name="get-httpclient-jar" unless="httpclient.jar.exists">
-    <get dest="lib/commons-httpclient-3.1.jar" src="http://central.maven.org/maven2/commons-httpclient/commons-httpclient/3.1/commons-httpclient-3.1.jar"/>
+    <get dest="lib/commons-httpclient-3.1.jar" src="https://repo.maven.apache.org/maven2/commons-httpclient/commons-httpclient/3.1/commons-httpclient-3.1.jar"/>
   </target>
 
   <target name="get-logging-jar" unless="logging.jar.exists">
-    <get dest="lib/commons-logging-1.1.1.jar" src="http://central.maven.org/maven2/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar"/>
+    <get dest="lib/commons-logging-1.1.1.jar" src="https://repo.maven.apache.org/maven2/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar"/>
   </target>
   
   <target name="get-xercesImpl-jar" unless="xercesImpl.jar.exists">
-    <get dest="lib/xercesImpl-2.9.1.jar" src="http://central.maven.org/maven2/xerces/xercesImpl/2.9.1/xercesImpl-2.9.1.jar"/>
+    <get dest="lib/xercesImpl-2.9.1.jar" src="https://repo.maven.apache.org/maven2/xerces/xercesImpl/2.9.1/xercesImpl-2.9.1.jar"/>
   </target>
 
   <target name="get-CartridgeServices-jar" unless="CartridgeServices.jar.exists">

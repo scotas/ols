@@ -5,7 +5,22 @@ $ cd docker-images/ols-dev-env
 $ ./buildDockerImageR5.sh
 $ cd ../..
 
-- Checkout Scotas OLS Source
+- Build from sources
+$ docker run -ti --rm ols-dev:2.0.5 bash
+[oracle@3023358b5b05 home]$ cd solr
+[oracle@3023358b5b05 solr]$ ant dist-core dist-solrj
+.....
+[oracle@3023358b5b05 solr]$ cd ../ols
+[oracle@3023358b5b05 ols]$ ant package-zip
+...
+package-zip:
+      [zip] Building zip: /home/lucene/build/lucene-ols-bin-2.0.5.zip
+
+BUILD SUCCESSFUL
+Total time: 2 minutes 14 seconds
+[oracle@3023358b5b05 ols]$ 
+
+- Compiling from live sources, Checkout Scotas OLS Source
 $ git clone https://github.com/scotas/ols.git
 $ docker run -ti -v "$(pwd)/ols:/home/ols" --rm ols-dev:2.0.5 bash
 [oracle@3023358b5b05 home]$ cd solr
