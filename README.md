@@ -12,4 +12,4 @@ When you need to search over big data, you need specialized solutions capable to
 - Near Real Time update/insert, Real Time deletes.
 - On-Line index/rebuild, Parallel index/rebuild.
 
-# More info at http://www.scotas.com/products
+# More info at [Scotas OLS Wiki](wiki)
