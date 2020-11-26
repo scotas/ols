@@ -22,7 +22,7 @@ END;
 create role LUCENEUSER;
 
 -- Oracle 18c/19c/20c schema-only user account
-ALTER USER LUCENE NO AUTHENTICATION;
+-- ALTER USER LUCENE NO AUTHENTICATION;
 
 -- required for parallel processing DBMS_PARALLEL_EXECUTE.run_task
 grant create job to LUCENEUSER;
