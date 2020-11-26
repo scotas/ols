@@ -25,7 +25,7 @@
   <import file="loadjava.xml"/>
   
   <description>
-    Lucene Oracle JVM integration binary dist for 10g/11g databases
+    Lucene Oracle JVM integration binary dist for 18c/19c/20c databases
   </description>
 
   <path id="junit.jar">
@@ -560,21 +560,21 @@
           depends="drop-jobs,create-user,create-lucene-role,load-extra-libs,load-lucene-core,load-solr-core,load-ols,create-domain-index,grant-any-job,create-searcher-job,create-updater-job,create-servlet-job">
   </target>
   
-  <target name="jit-lucene-classes" description="Force to compile Java classes under Lucene's schema, only on 11g">
+  <target name="jit-lucene-classes" description="Force to compile Java classes under Lucene's schema">
     <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
       <arg value="${db.usr}/${db.pwd}@${db.str}"/>
       <arg value="@compileClasses"/>
     </exec>
   </target>
 
-  <target name="jit-oracle-classes" description="Force to compile Java classes under Oracle schema, only for 11g">
+  <target name="jit-oracle-classes" description="Force to compile Java classes under Oracle schema">
     <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
-      <arg value="${dba.usr}/${dba.pwd}@${db.str} as sysdba"/>
+      <arg value="${dba.usr}/${dba.pwd}@${db.str}"/>
       <arg value="@compileSysClasses"/>
     </exec>
   </target>
 
-  <target name="jit-core-classes" description="Force to compile Java classes under Scotas schema, only for 11g">
+  <target name="jit-core-classes" description="Force to compile Java classes under Scotas schema">
     <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
       <arg value="${db.usr}/${db.pwd}@${db.str}"/>
       <arg value="@compileCoreClasses"/>

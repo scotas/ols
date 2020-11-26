@@ -1,4 +1,4 @@
-  rem usage notes:
+rem usage notes:
 rem sqlplus sys/change_on_install@orcl @db/create-lucene-role.sql
 rem run on the server machine, because it use dbms_java.loadjava
 set long 10000 lines 140 pages 50 timing on echo off
@@ -20,6 +20,9 @@ END;
 /
 
 create role LUCENEUSER;
+
+-- Oracle 18c/19c/20c schema-only user account
+ALTER USER LUCENE NO AUTHENTICATION;
 
 -- required for parallel processing DBMS_PARALLEL_EXECUTE.run_task
 grant create job to LUCENEUSER;
