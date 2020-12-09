@@ -346,6 +346,7 @@ public class SolrDomainIndex implements CustomDatum, CustomDatumFactory {
     public static java.math.BigDecimal ODCIIndexCreate(ODCIIndexInfo ia,
                                                        String parms,
                                                        ODCIEnv env) throws SQLException {
+        logger.info("ODCIIndexCreate: " + getIndexPrefix(ia));
         OJVMDirectory dir = null;
         IndexWriter writer = null;
         Parameters parameters = new Parameters();
@@ -746,7 +747,13 @@ public class SolrDomainIndex implements CustomDatum, CustomDatumFactory {
                 env.getCallProperty().equals(ODCIConstFinalCall))
                 return SUCCESS;
         String directoryPrefix = getIndexPrefix(ia);
-        Parameters parameters = Parameters.getParameters(directoryPrefix);
+        Parameters parameters;
+        try {
+            parameters = Parameters.getParameters(directoryPrefix);
+        } catch (InstantiationError ie) {
+            logger.warn("Index parameters not found, may be index doesn't exists: " + directoryPrefix);
+            return SUCCESS;
+        }
         boolean indexOnRam =
             "true".equalsIgnoreCase(parameters.getParameter("IndexOnRam",
                                                             "false"));
@@ -798,19 +805,13 @@ public class SolrDomainIndex implements CustomDatum, CustomDatumFactory {
         retVal = ODCIIndexDrop(ia, env);
         if (ERROR.equals(retVal))
             return retVal;
+        logger.info("setIndexPartition (drop): " + p1.getIndexPartition());
         ia.setIndexPartition(p1.getIndexPartition());
-        ia.getIndexCols().getElement(0).setTablePartition(p1.getTablePartition());
-        logger.info("Dropping index partition: " + 
-                    ia.getIndexPartition() + " on table partition: " +
-                    ia.getIndexCols().getElement(0).getTablePartition());
         retVal = ODCIIndexDrop(ia, env);
         if (ERROR.equals(retVal))
             return retVal;
+        logger.info("setIndexPartition (create): " + p2.getIndexPartition());
         ia.setIndexPartition(p2.getIndexPartition());
-        ia.getIndexCols().getElement(0).setTablePartition(p2.getTablePartition());
-        logger.info("Creating new merged index partition: " +
-                    ia.getIndexPartition() + " on table partition: " +
-                    ia.getIndexCols().getElement(0).getTablePartition());
         retVal = ODCIIndexCreate(ia, userParameters, env);
         logger.trace("ODCIIndexMergePartition", retVal);
         return SUCCESS;
@@ -845,19 +846,13 @@ public class SolrDomainIndex implements CustomDatum, CustomDatumFactory {
         retVal = ODCIIndexDrop(ia, env);
         if (ERROR.equals(retVal))
             return retVal;
+        logger.info("setIndexPartition (create): " + p1.getIndexPartition());
         ia.setIndexPartition(p1.getIndexPartition());
-        ia.getIndexCols().getElement(0).setTablePartition(p1.getTablePartition());
-        logger.info("Creating index partition: " + 
-                    ia.getIndexPartition() + " on table partition: " +
-                    ia.getIndexCols().getElement(0).getTablePartition());
         retVal = ODCIIndexCreate(ia, userParameters, env);
         if (ERROR.equals(retVal))
             return retVal;
+        logger.info("setIndexPartition (create): " + p2.getIndexPartition());
         ia.setIndexPartition(p2.getIndexPartition());
-        ia.getIndexCols().getElement(0).setTablePartition(p2.getTablePartition());
-        logger.info("Creating index partition: " + 
-                    ia.getIndexPartition() + " on table partition: " +
-                    ia.getIndexCols().getElement(0).getTablePartition());
         retVal = ODCIIndexCreate(ia, userParameters, env);
         logger.trace("ODCIIndexSplitPartition", retVal);
         return SUCCESS;

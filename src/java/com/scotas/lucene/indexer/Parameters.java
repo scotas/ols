@@ -620,7 +620,7 @@ public class Parameters implements Serializable {
                 cachedParameters.put(prefix, par);
                 //System.out.println(".getParameters: load from DB for index: "+prefix);
             } catch (SQLException sqe) {
-                throw new InstantiationError(sqe.getMessage());
+                throw new InstantiationError(sqe.getMessage() + " when trying to get parameters for: " + prefix);
             } finally {
                 OJVMUtil.closeDbResources(stmt, rs);
             }
