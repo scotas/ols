@@ -56,7 +56,7 @@ SELECT FIELD,SJOIN(T.FACETS) F FROM TABLE(SFACETS(USER||'.TUTORIAL_SIDX','*:*','
 -- Facets query example with ranges
 SELECT * from table(SELECT T.QUERIES FROM TABLE(SFACETS(USER||'.TUTORIAL_SIDX','*:*','facet.query=price_f:[0+TO+100]&facet.query=price_f:[100+TO+*]')) T);
 -- Facets ranges example
-SELECT * from table(SELECT T.RANGES FROM TABLE(SFACETS(USER||'.TUTORIAL_SIDX','*:*','facet.range=price_f&facet.range.start=0&facet.range.end=1000&facet.range.gap=100')) T)
+SELECT * from table(SELECT T.RANGES FROM TABLE(SFACETS(USER||'.TUTORIAL_SIDX','*:*','facet.range=price_f&facet.range.start=0&facet.range.end=1000&facet.range.gap=100')) T);
 -- Facets dates example
 SELECT * from table(SELECT T.DATES FROM TABLE(SFACETS(USER||'.TUTORIAL_SIDX','*:*','facet.date=manufacturedate_dt&facet.date.start=2004-01-01T00:00:00Z&facet.date.end=2010-01-01T00:00:00Z&facet.date.gap=%2B1YEAR')) T);
 -- Facets dates and field example combined
