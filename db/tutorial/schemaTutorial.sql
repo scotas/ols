@@ -12,6 +12,7 @@ Grant succeeded.
 */
 CREATE TYPE CAT_LIST_ARR AS VARRAY(20) OF VARCHAR2(100)
 ;
+/
 
 CREATE TABLE OLS_TUTORIAL (
   ID VARCHAR2(30) PRIMARY KEY,
@@ -28,7 +29,8 @@ CREATE TABLE OLS_TUTORIAL (
   PAYLOADS   VARCHAR2(4000),
   STORE   VARCHAR2(200))
 ;
--- set define off
+
+set define off
 -- hd.xml
 insert into ols_tutorial values (
 'SP2514N',
