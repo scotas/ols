@@ -72,8 +72,8 @@ public class DBTestCase extends TestCase {
         ods.setURL(url);
         ods.setUser(System.getProperty("db.usr", "lucene"));
         ods.setPassword(System.getProperty("db.pwd", "lucene"));
-        ods.setConnectionCachingEnabled(true); // be sure set to true
-        ods.setConnectionCacheProperties(prop);
+        ods.setExplicitCachingEnabled(true); // be sure set to true
+        ods.setConnectionProperties(prop);
     }
 
     /**

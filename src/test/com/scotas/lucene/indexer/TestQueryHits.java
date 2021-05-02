@@ -103,9 +103,8 @@ public class TestQueryHits extends TestCase {
         ods.setURL(url);
         ods.setUser(System.getProperty("db.usr", "lucene"));
         ods.setPassword(System.getProperty("db.pwd", "lucene"));
-        ods.setConnectionCachingEnabled(true); // be sure set to true
-        ods.setConnectionCacheProperties(prop);
-        //ods.setConnectionCacheName("ImplicitCache01"); // this cache's name
+        ods.setExplicitCachingEnabled(true); // be sure set to true
+        ods.setConnectionProperties(prop);
     }
 
     private int countHits() throws SQLException {
