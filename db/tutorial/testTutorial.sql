@@ -14,7 +14,7 @@ SELECT /*+ DOMAIN_INDEX_SORT */ round(sscore(1),2) sc,NAME FROM OLS_TUTORIAL T W
 -- SQL Sort - Optimizer Cost 4
 SELECT ID,NAME,PRICE FROM OLS_TUTORIAL WHERE SCONTAINS(ID,'video',1)>0 order by price desc;
 -- Domain Index sort, Optimizer Cost 3
-SELECT /*+ DOMAIN_INDEX_SORT */ ID,NAME,PRICE FROM OLS_TUTORIAL WHERE SCONTAINS(ID,'video','price_f desc')>0:
+SELECT /*+ DOMAIN_INDEX_SORT */ ID,NAME,PRICE FROM OLS_TUTORIAL WHERE SCONTAINS(ID,'video','price_f desc')>0;
 -- pre-update test
 SELECT ID,NAME,PRICE FROM OLS_TUTORIAL WHERE SCONTAINS(ID,'name_tg:"Server-mod"')>0;
 -- test update, wait a few second for near real-time sort
