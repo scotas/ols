@@ -38,6 +38,9 @@ public class TestQueryHitsCtx extends TestCase {
     private static final String qry = "function OR procedure OR package";
 
     OracleDataSource ods = null;
+    PreparedStatement psmt = null;
+    CallableStatement myCallableStatement = null;
+    Connection conn = null;
     long startTime = 0;
 
     private static int random(int i) { // for JDK 1.1 compatibility
@@ -47,20 +50,10 @@ public class TestQueryHitsCtx extends TestCase {
         return r % i;
     }
 
-    private void iterateOverResult(int from, boolean firstRowHint, boolean getScore) throws IOException, SQLException {
-        PreparedStatement psmt = null;
+    private void iterateOverResult(int from) throws IOException, SQLException {
         ResultSet rs = null;
-        Connection conn = null;
         try {
-            conn = ods.getConnection();
-            psmt = conn.prepareStatement(
-            " select sc,text from (" +
-            " select rownum as ntop_pos,q.* from (" +
-            " select /*+ "+ ((firstRowHint) ? "FIRST_ROWS(1000)" : "") +" DOMAIN_INDEX_SORT DOMAIN_INDEX_FILTER(test_source_big source_big_idx) */ "+
-            ((getScore) ? "score(1)" : "-1") +" sc,text\n" +
-            " from test_source_big where contains(text,?,1)>0 and type='PACKAGE BODY' and line between 0 and 3000 order by line DESC" +
-            " ) q)" +
-            " where ntop_pos>=? and ntop_pos<=?" );
+
             psmt.setString(1, qry);
             psmt.setInt(2, from);
             psmt.setInt(3, from + 9);
@@ -78,20 +71,14 @@ public class TestQueryHitsCtx extends TestCase {
             rs.close();
             rs = null;
         } catch (SQLException s) {
-            System.err.println("SQLError processing from row="+from+" msg= "+
-                               s.getLocalizedMessage()+" errorCode="+
-                               s.getErrorCode()+" sqlState="+s.getSQLState());
-            s.printStackTrace();
+            //System.err.println("SQLError processing from row="+from+" msg= "+
+            //                   s.getLocalizedMessage()+" errorCode="+
+            //                   s.getErrorCode()+" sqlState="+s.getSQLState());
+            //s.printStackTrace();
         } finally {
             if (rs != null)
                 rs.close();
             rs = null;
-            if (psmt != null)
-                psmt.close();
-            psmt = null;
-            if (conn != null)
-                conn.close();
-            conn = null;
         }
     }
 
@@ -115,13 +102,8 @@ public class TestQueryHitsCtx extends TestCase {
     }
 
     private int countHits() throws SQLException {
-        CallableStatement myCallableStatement = null;
         BigDecimal result = new BigDecimal(0);
-        Connection conn = null;
         try {
-            conn = ods.getConnection();
-            myCallableStatement =
-                    conn.prepareCall("{ ? = call ctx_query.count_hits(index_name => ?, text_query => ?, exact => TRUE) }");
             myCallableStatement.registerOutParameter(1, Types.BIGINT);
             myCallableStatement.setString(2, "SOURCE_BIG_IDX");
             myCallableStatement.setString(3, qry);
@@ -130,13 +112,6 @@ public class TestQueryHitsCtx extends TestCase {
             System.out.println("Hits: " + result);
         } catch (SQLException s) {
             s.printStackTrace();
-        } finally {
-          if (myCallableStatement != null)
-              myCallableStatement.close();
-          myCallableStatement = null;
-          if (conn != null)
-              conn.close();
-          conn = null;
         }
         return result.intValue();
     }
@@ -157,6 +132,16 @@ public class TestQueryHitsCtx extends TestCase {
      */
     public void setUp() throws IOException, SQLException {
         startTime = System.currentTimeMillis();
+        conn = ods.getConnection();
+        psmt = conn.prepareStatement(
+        " select sc,text from (" +
+        " select rownum as ntop_pos,q.* from (" +
+        " select /*+ DOMAIN_INDEX_SORT DOMAIN_INDEX_FILTER(test_source_big source_big_idx) */ score(1) sc,text\n" +
+        " from test_source_big where contains(text,?,1)>0 and type='PACKAGE BODY' and line between 0 and 3000 order by line DESC" +
+        " ) q)" +
+        " where ntop_pos>=? and ntop_pos<=?" );
+        myCallableStatement =
+                conn.prepareCall("{ ? = call ctx_query.count_hits(index_name => ?, text_query => ?, exact => TRUE) }");
     }
 
 
@@ -191,7 +176,7 @@ public class TestQueryHitsCtx extends TestCase {
                                     //System.out.println(this +
                                     //                   " searching window " +
                                     //                   row);
-                                    iterateOverResult(row,false,false);
+                                    iterateOverResult(row);
                                     sleep(100 * waitTime);
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
@@ -215,6 +200,15 @@ public class TestQueryHitsCtx extends TestCase {
     }
 
     public void tearDown() throws IOException, SQLException {
+        if (myCallableStatement != null)
+            myCallableStatement.close();
+        myCallableStatement = null;
+        if (psmt != null)
+            psmt.close();
+        psmt = null;
+        if (conn != null)
+            conn.close();
+        conn = null;
         System.out.println("Elapsed time: " +
                            (System.currentTimeMillis() - startTime));
     }

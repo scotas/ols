@@ -38,6 +38,9 @@ public class TestQueryHits extends TestCase {
     private static final String qry = "function OR procedure OR package";
 
     OracleDataSource ods = null;
+    PreparedStatement psmt = null;
+    CallableStatement myCallableStatement = null;
+    Connection conn = null;
     long startTime = 0;
 
     private static int random(int i) { // for JDK 1.1 compatibility
@@ -47,16 +50,9 @@ public class TestQueryHits extends TestCase {
         return r % i;
     }
 
-    private void iterateOverResult(int from, boolean firstRowHint, boolean getScore) throws IOException, SQLException {
-        PreparedStatement psmt = null;
+    private void iterateOverResult(int from) throws IOException, SQLException {
         ResultSet rs = null;
-        Connection conn = null;
         try {
-            conn = ods.getConnection();
-            psmt = conn.prepareStatement(
-            " select /*+ "+ ((firstRowHint) ? "FIRST_ROWS(1000)" : "") +" DOMAIN_INDEX_SORT DOMAIN_INDEX_FILTER(test_source_big source_big_sidx) */ "+ 
-            ((getScore) ? "sscore(1)" : "-1") +" sc,text\n" +
-            " from test_source_big where scontains(text,?,1)>0 and type='PACKAGE BODY' and line between 0 and 3000 order by line DESC" );
             psmt.setString(1,
                            "rownum:[" + from + " TO " + (from + 9) + "] AND (" +
                            qry + ")");
@@ -74,20 +70,14 @@ public class TestQueryHits extends TestCase {
             rs.close();
             rs = null;
         } catch (SQLException s) {
-            System.err.println("SQLError processing from row="+from+" msg= "+
-                               s.getLocalizedMessage()+" errorCode="+
-                               s.getErrorCode()+" sqlState="+s.getSQLState());
-            s.printStackTrace();
+            //System.err.println("SQLError processing from row="+from+" msg= "+
+            //                   s.getLocalizedMessage()+" errorCode="+
+            //                   s.getErrorCode()+" sqlState="+s.getSQLState());
+            //s.printStackTrace();
         } finally {
             if (rs != null)
                 rs.close();
             rs = null;
-            if (psmt != null)
-                psmt.close();
-            psmt = null;
-            if (conn != null)
-                conn.close();
-            conn = null;
         }
     }
 
@@ -102,22 +92,17 @@ public class TestQueryHits extends TestCase {
         //            String url = "jdbc:oracle:thin:@mppdbx01.generali.it:1626:CSDS1";
         //            String url = "jdbc:oracle:thin:@(DESCRIPTION =(ADDRESS_LIST =(ADDRESS = (PROTOCOL = TCP)(HOST = mppdbx01.generali.it)(PORT = 1626)) ) (CONNECT_DATA = (SERVER = DEDICATED) (SID = CSDS1) ) )";
         String url =
-            "jdbc:oracle:oci:@" + System.getProperty("db.str", "orcl");
+            "jdbc:oracle:oci8:@" + System.getProperty("db.str", "orcl");
         ods.setURL(url);
         ods.setUser(System.getProperty("db.usr", "lucene"));
         ods.setPassword(System.getProperty("db.pwd", "lucene"));
         ods.setExplicitCachingEnabled(true); // be sure set to true
         ods.setConnectionProperties(prop);
-    }
+}
 
     private int countHits() throws SQLException {
-        CallableStatement myCallableStatement = null;
         BigDecimal result = new BigDecimal(0);
-        Connection conn = null;
         try {
-            conn = ods.getConnection();
-            myCallableStatement =
-                    conn.prepareCall("{ ? = call SolrDomainIndex.countHits(?,?) }");
             myCallableStatement.registerOutParameter(1, Types.BIGINT);
             myCallableStatement.setString(2, "SOURCE_BIG_SIDX");
             myCallableStatement.setString(3, qry);
@@ -126,13 +111,6 @@ public class TestQueryHits extends TestCase {
             System.out.println("Hits: " + result);
         } catch (SQLException s) {
             s.printStackTrace();
-        } finally {
-          if (myCallableStatement != null)
-              myCallableStatement.close();
-          myCallableStatement = null;
-          if (conn != null)
-              conn.close();
-          conn = null;
         }
         return result.intValue();
     }
@@ -143,6 +121,12 @@ public class TestQueryHits extends TestCase {
      */
     public void setUp() throws IOException, SQLException {
         startTime = System.currentTimeMillis();
+        conn = ods.getConnection();
+        psmt = conn.prepareStatement(
+            " select /*+ DOMAIN_INDEX_SORT DOMAIN_INDEX_FILTER(test_source_big source_big_sidx) */ sscore(1) sc,text\n" +
+            " from test_source_big where scontains(text,?,1)>0 and type='PACKAGE BODY' and line between 0 and 3000 order by line DESC" );
+        myCallableStatement =
+        conn.prepareCall("{ ? = call SolrDomainIndex.countHits(?,?) }");
     }
 
 
@@ -161,14 +145,14 @@ public class TestQueryHits extends TestCase {
         for (int i = 0; i < MAX_THREADS; i++) {
             ts[i] = new Thread("Searcher " + i) {
                         public void run() {
-			int totalRows;
-                        try {
-                            totalRows = (int)(countHits() * 0.15);
-                        } catch (SQLException e) {
-                            e.printStackTrace();
-                            throw new RuntimeException(e);
-                        }
-                        int row = 1;
+			                int totalRows;
+                            try {
+                                totalRows = (int)(countHits() * 0.15);
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                                throw new RuntimeException(e);
+                            }
+                            int row = 1;
                             for (int j = 0; j < NUM_READS; j++)
                                 try {
                                     int waitTime = random(10);
@@ -177,7 +161,7 @@ public class TestQueryHits extends TestCase {
                                     //System.out.println(this +
                                     //                   " searching window " +
                                     //                   row);
-                                    iterateOverResult(row,false,false);
+                                    iterateOverResult(row);
                                     sleep(100 * waitTime);
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
@@ -201,6 +185,15 @@ public class TestQueryHits extends TestCase {
     }
 
     public void tearDown() throws IOException, SQLException {
+        if (myCallableStatement != null)
+             myCallableStatement.close();
+        myCallableStatement = null;
+        if (psmt != null)
+          psmt.close();
+        psmt = null;
+        if (conn != null)
+              conn.close();
+        conn = null;
         System.out.println("Elapsed time: " +
                            (System.currentTimeMillis() - startTime));
     }
