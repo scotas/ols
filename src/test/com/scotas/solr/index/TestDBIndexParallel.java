@@ -27,7 +27,6 @@ public class TestDBIndexParallel extends DBTestCase {
     private boolean onLine = true;
     private boolean commitOnSync = true;
     private boolean continueSync = true;
-    private boolean bufferedQueue = false;
     
     private static int random(int i) { // for JDK 1.1 compatibility
         int r = RANDOM.nextInt();
@@ -47,7 +46,23 @@ public class TestDBIndexParallel extends DBTestCase {
     }
 
     public void setUp() throws SQLException {
+        luceneMode = "true".equalsIgnoreCase(System.getProperty("db.lucene-mode", "true"));
+        conn = ods.getConnection();
+        conn.setAutoCommit(true);
         createTable();
+        insertStatement =
+                conn.prepareStatement("insert into " + TABLE + " (select rownum+?, to_char(to_date(mod(rownum+?,5373484)+1,'J'),'JSP'), to_char(to_date(mod((rownum+?)*10,5373484)+1,'J'),'JSP'), (rownum+?)*10 from dual connect by rownum <= ?)");
+        deleteStatement =
+                conn.prepareStatement("delete from " + TABLE + " where f1 between ? and ?");
+        updateStatement =
+                conn.prepareStatement("update " + TABLE + " set f2=f2 where f1 between ? and ?");
+        if (luceneMode)
+                findStatement =
+                        conn.prepareStatement("select /*+ DOMAIN_INDEX_SORT DOMAIN_INDEX_FILTER(" + TABLE +","+ LINDEX + ") */ 1 from " + TABLE + " where scontains(f2,'rownum:[1 TO 10] AND '||to_char(to_date(?,'J'),'JSP'),1)>0 and f1 between ? and ? order by f1");
+            else
+                findStatement =
+                        conn.prepareStatement("select /*+ DOMAIN_INDEX_SORT DOMAIN_INDEX_FILTER(" + TABLE +","+ OINDEX + ") */ c from (select rownum as ntop_pos,q.* from(select 1 c from " + TABLE + " where contains(f2,to_char(to_date(?,'J'),'JSP'),1)>0 and f1 between ? and ? order by f1) q) where ntop_pos>=1 and ntop_pos<=10");
+
     }
 
     public void testLuceneDomainIndex() throws SQLException,
@@ -257,6 +272,21 @@ public class TestDBIndexParallel extends DBTestCase {
 
     public void tearDown() throws SQLException {
         dropTable();
+        if (insertStatement != null)
+            insertStatement.close();
+        insertStatement = null;
+        if (updateStatement != null)
+            updateStatement.close();
+        updateStatement = null;
+        if (deleteStatement != null)
+            deleteStatement.close();
+        deleteStatement = null;
+        if (findStatement != null)
+            findStatement.close();
+        findStatement = null;
+        if (conn != null)
+            conn.close();
+        conn = null;
     }
 }
 

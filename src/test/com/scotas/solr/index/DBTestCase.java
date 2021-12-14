@@ -48,7 +48,12 @@ public class DBTestCase extends TestCase {
         logger.setLevel(Level.parse(LOG_LEVEL));
     }
 
-    OracleDataSource ods = null;
+    OracleDataSource              ods = null;
+    Connection                   conn = null;
+    PreparedStatement insertStatement = null;
+    PreparedStatement deleteStatement = null;
+    PreparedStatement updateStatement = null;
+    PreparedStatement   findStatement = null;
     long startTime = 0;
 
     /**
@@ -81,9 +86,7 @@ public class DBTestCase extends TestCase {
      */
     public void createTable() throws SQLException {
         Statement myStatement = null;
-        Connection conn = null;
         try {
-            conn = ods.getConnection();
             myStatement = conn.createStatement();
             myStatement.executeUpdate("create table " + TABLE + " (\n" +
                     "f1 number primary key,\n" +
@@ -98,8 +101,7 @@ public class DBTestCase extends TestCase {
         } finally {
             if (myStatement != null)
                 myStatement.close();
-            if (conn != null)
-                conn.close();
+            myStatement = null;
         }
     }
 
@@ -109,9 +111,7 @@ public class DBTestCase extends TestCase {
      */
     public void dropTable() throws SQLException {
         Statement myStatement = null;
-        Connection conn = null;
         try {
-            conn = ods.getConnection();
             myStatement = conn.createStatement();
             myStatement.executeUpdate("drop table t1");
             System.out.println("Table droped: " + TABLE);
@@ -122,8 +122,7 @@ public class DBTestCase extends TestCase {
         } finally {
             if (myStatement != null)
                 myStatement.close();
-            if (conn != null)
-                conn.close();
+            myStatement = null;
         }
     }
 
@@ -145,9 +144,7 @@ public class DBTestCase extends TestCase {
      */
     public void createIndex(boolean onLine, boolean commitOnSync) throws SQLException {
         Statement myStatement = null;
-        Connection conn = null;
         try {
-            conn = ods.getConnection();
             myStatement = conn.createStatement();
             if (luceneMode) {
                 myStatement.executeUpdate("create index " + LINDEX + " on " +
@@ -175,8 +172,7 @@ public class DBTestCase extends TestCase {
         } finally {
             if (myStatement != null)
                 myStatement.close();
-            if (conn != null)
-                conn.close();
+            myStatement = null;
         }
     }
 
@@ -186,9 +182,7 @@ public class DBTestCase extends TestCase {
      */
     public void dropIndex() throws SQLException {
         Statement myStatement = null;
-        Connection conn = null;
         try {
-            conn = ods.getConnection();
             myStatement = conn.createStatement();
             if (luceneMode) {
                 myStatement.executeUpdate("drop index " + LINDEX);
@@ -204,8 +198,7 @@ public class DBTestCase extends TestCase {
         } finally {
             if (myStatement != null)
                 myStatement.close();
-            if (conn != null)
-                conn.close();
+            myStatement = null;
         }
     }
 
@@ -220,38 +213,25 @@ public class DBTestCase extends TestCase {
      * @throws SQLException If there are problems such as primary key violation it rollback the transaction
      */
     public long insertRows(int startIndex, int endIndex) throws SQLException {
-        PreparedStatement myStatement = null;
-        Connection conn = null;
         int rowCount = 0;
         long avgTime = 0;
         try {
             long elapsedTime = 0;
-            conn = ods.getConnection();
-            conn.setAutoCommit(true);
-            myStatement =
-                    conn.prepareStatement("insert into " + TABLE + " (select rownum+?, to_char(to_date(mod(rownum+?,5373484)+1,'J'),'JSP'), to_char(to_date(mod((rownum+?)*10,5373484)+1,'J'),'JSP'), (rownum+?)*10 from dual connect by rownum <= ?)");
-            myStatement.setInt(1, startIndex);
-            myStatement.setInt(2, startIndex);
-            myStatement.setInt(3, startIndex);
-            myStatement.setInt(4, startIndex);
-            myStatement.setInt(5, endIndex - startIndex + 1);
+            insertStatement.setInt(1, startIndex);
+            insertStatement.setInt(2, startIndex);
+            insertStatement.setInt(3, startIndex);
+            insertStatement.setInt(4, startIndex);
+            insertStatement.setInt(5, endIndex - startIndex + 1);
             elapsedTime = System.currentTimeMillis();
-            rowCount = myStatement.executeUpdate();
+            rowCount = insertStatement.executeUpdate();
             //conn.commit(); // OText working in OnLine mode will apply changes here
             elapsedTime = System.currentTimeMillis() - elapsedTime;
             avgTime = ((rowCount > 0) ? elapsedTime / rowCount : 0);
             //System.out.println("Inserted rows: " + rowCount + " time: "+ elapsedTime + " avg time: " + avgTime);
-            myStatement.close();
-            myStatement = null;
         } catch (SQLException s) {
             if(s.getErrorCode()!=1)
               s.printStackTrace();
             //conn.rollback();
-        } finally {
-            if (myStatement != null)
-                myStatement.close();
-            if (conn != null)
-                conn.close();
         }
         return avgTime;
     }
@@ -264,19 +244,13 @@ public class DBTestCase extends TestCase {
      * @throws SQLException If there are problems rollback the transaction
      */
     public long deleteRows(int startIndex, int count) throws SQLException {
-        PreparedStatement myStatement = null;
-        Connection conn = null;
         int rowCount = 0;
         long elapsedTime = 0;
         try {
-            conn = ods.getConnection();
-            conn.setAutoCommit(true);
-            myStatement =
-                    conn.prepareStatement("delete from " + TABLE + " where f1 between ? and ?");
-            myStatement.setInt(1, startIndex);
-            myStatement.setInt(2, startIndex + count);
+            deleteStatement.setInt(1, startIndex);
+            deleteStatement.setInt(2, startIndex + count);
             elapsedTime = System.currentTimeMillis();
-            rowCount = myStatement.executeUpdate();
+            rowCount = deleteStatement.executeUpdate();
             //conn.commit();
             if (rowCount > 0) { }
             /*    System.out.println("Row deleted " + rowCount + ", from: " +
@@ -293,11 +267,6 @@ public class DBTestCase extends TestCase {
                                " to: " + count + " - " +
                                s.getLocalizedMessage());
             //conn.rollback();
-        } finally {
-            if (myStatement != null)
-                myStatement.close();
-            if (conn != null)
-                conn.close();
         }
         elapsedTime = System.currentTimeMillis() - elapsedTime;
         return (rowCount > 0) ? elapsedTime / rowCount : 0;
@@ -312,19 +281,13 @@ public class DBTestCase extends TestCase {
      * @throws SQLException If there are problems rollback the transaction
      */
     public long updateRows(int startIndex, int count) throws SQLException {
-        PreparedStatement myStatement = null;
-        Connection conn = null;
         int rowCount = 0;
         long elapsedTime = 0;
         try {
-            conn = ods.getConnection();
-            conn.setAutoCommit(true);
-            myStatement =
-                    conn.prepareStatement("update " + TABLE + " set f2=f2 where f1 between ? and ?");
-            myStatement.setInt(1, startIndex);
-            myStatement.setInt(2, startIndex + count);
+            updateStatement.setInt(1, startIndex);
+            updateStatement.setInt(2, startIndex + count);
             elapsedTime = System.currentTimeMillis();
-            rowCount = myStatement.executeUpdate();
+            rowCount = updateStatement.executeUpdate();
             //conn.commit();
             if (rowCount > 0) { }
             /*    System.out.println("Row updated " + rowCount + ", from: " +
@@ -341,11 +304,6 @@ public class DBTestCase extends TestCase {
                                " to: " + count + " - " +
                                s.getLocalizedMessage());
             //conn.rollback();
-        } finally {
-            if (myStatement != null)
-                myStatement.close();
-            if (conn != null)
-                conn.close();
         }
         elapsedTime = System.currentTimeMillis() - elapsedTime;
         return (rowCount > 0) ? elapsedTime / rowCount : 0;
@@ -358,26 +316,17 @@ public class DBTestCase extends TestCase {
      * @throws SQLException If there are problems
      */
     public long findRows(int row, int batchSize) throws SQLException {
-        PreparedStatement myStatement = null;
         ResultSet rs = null;
-        Connection conn = null;
         long elapsedTime = 0;
         int n = row % 5373484 + 1; // range between 1 and Max Julian Date
         int startWindow = (n / batchSize) * batchSize;
         int endWindow = ((n / batchSize) + 1) * batchSize;
         try {
-            conn = ods.getConnection();
-            if (luceneMode)
-                myStatement =
-                        conn.prepareStatement("select /*+ DOMAIN_INDEX_SORT DOMAIN_INDEX_FILTER(" + TABLE +","+ LINDEX + ") */ 1 from " + TABLE + " where scontains(f2,'rownum:[1 TO 10] AND '||to_char(to_date(?,'J'),'JSP'),1)>0 and f1 between ? and ? order by f1");
-            else
-                myStatement =
-                        conn.prepareStatement("select /*+ DOMAIN_INDEX_SORT DOMAIN_INDEX_FILTER(" + TABLE +","+ OINDEX + ") */ c from (select rownum as ntop_pos,q.* from(select 1 c from " + TABLE + " where contains(f2,to_char(to_date(?,'J'),'JSP'),1)>0 and f1 between ? and ? order by f1) q) where ntop_pos>=1 and ntop_pos<=10");
-            myStatement.setInt(1, n);
-            myStatement.setInt(2, startWindow);
-            myStatement.setInt(3, endWindow);
+            findStatement.setInt(1, n);
+            findStatement.setInt(2, startWindow);
+            findStatement.setInt(3, endWindow);
             elapsedTime = System.currentTimeMillis();
-            rs = myStatement.executeQuery();
+            rs = findStatement.executeQuery();
             boolean found = rs.next();
             if (found) { }
             /*    System.out.println("Found rows with: " + n +
@@ -394,10 +343,7 @@ public class DBTestCase extends TestCase {
         } finally {
             if (rs != null)
                 rs.close();
-            if (myStatement != null)
-                myStatement.close();
-            if (conn != null)
-                conn.close();
+            rs = null;
         }
         elapsedTime = System.currentTimeMillis() - elapsedTime;
         return elapsedTime;
@@ -412,10 +358,8 @@ public class DBTestCase extends TestCase {
     public long countHits(int n) throws SQLException {
         CallableStatement myStatement = null;
         int hits = 0;
-        Connection conn = null;
         long elapsedTime = 0;
         try {
-            conn = ods.getConnection();
             if (luceneMode) {
                 myStatement =
                         conn.prepareCall("{call ? := SolrDomainIndex.countHits(?,to_char(to_date(?,'J'),'JSP'))}");
@@ -444,8 +388,7 @@ public class DBTestCase extends TestCase {
         } finally {
             if (myStatement != null)
                 myStatement.close();
-            if (conn != null)
-                conn.close();
+            myStatement = null;
         }
         elapsedTime = System.currentTimeMillis() - elapsedTime;
         return elapsedTime;
@@ -462,22 +405,21 @@ public class DBTestCase extends TestCase {
      */
     public long syncIndex() throws SQLException {
         CallableStatement myStatement = null;
-        Connection conn = null;
         long elapsedTime = 0;
         try {
-            conn = ods.getConnection();
-            conn.setAutoCommit(false);
             if (luceneMode) {
                 myStatement =
                         conn.prepareCall("{CALL SolrDomainIndex.sync(?)}");
                 myStatement.setString(1, LINDEX);
             } else {
+                // requires:
+                // SQL> grant execute on ctx_ddl to scott;
                 myStatement = conn.prepareCall("{CALL ctx_ddl.sync_index(?)}");
                 myStatement.setString(1, OINDEX);
             }
             elapsedTime = System.currentTimeMillis();
             myStatement.execute();
-            conn.commit();
+            //conn.commit();
             /*if (luceneMode) {
                 System.out.println("Index synced: " + LINDEX +
                                    " elapsed time: " + (System.currentTimeMillis() - elapsedTime) + " ms.");
@@ -492,8 +434,7 @@ public class DBTestCase extends TestCase {
         } finally {
             if (myStatement != null)
                 myStatement.close();
-            if (conn != null)
-                conn.close();
+            myStatement = null;
         }
         elapsedTime = System.currentTimeMillis() - elapsedTime;
         return elapsedTime;
@@ -508,11 +449,8 @@ public class DBTestCase extends TestCase {
      */
     public long optimizeIndex() throws SQLException {
         CallableStatement myStatement = null;
-        Connection conn = null;
         long stTime = 0;
         try {
-            conn = ods.getConnection();
-            conn.setAutoCommit(false);
             stTime = System.currentTimeMillis();
             if (luceneMode) {
               myStatement =
@@ -523,7 +461,7 @@ public class DBTestCase extends TestCase {
               myStatement.setString(1, OINDEX);
             }
             myStatement.execute();
-            conn.commit();
+            //conn.commit();
             if (luceneMode) {
                 System.out.println("Index optimized: " + LINDEX +
                                    " elapsed time: " + (System.currentTimeMillis() - stTime) + " ms.");
@@ -537,8 +475,7 @@ public class DBTestCase extends TestCase {
         } finally {
             if (myStatement != null)
                 myStatement.close();
-            if (conn != null)
-                conn.close();
+            myStatement = null;
         }
         stTime = System.currentTimeMillis() - stTime;
         return stTime;
