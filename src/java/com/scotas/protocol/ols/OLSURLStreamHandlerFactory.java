@@ -1,7 +1,5 @@
 package com.scotas.protocol.ols;
 
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
 

@@ -17,7 +17,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -39,7 +38,6 @@ public class OLSURLConnection extends URLConnection {
     private String name;
     private String res;
     private String prefix;
-    private int length = 0;
 
     /**
      * @param url
@@ -87,7 +85,7 @@ public class OLSURLConnection extends URLConnection {
             stmt.setString(1, this.res);
             rs = stmt.executeQuery();
             if (rs.next()) {
-                this.length = rs.getInt(1);
+                rs.getInt(1);
                 InputStream is = rs.getBlob(2).getBinaryStream();
                 logger.info("Found file: " + this.name + " prefix: " +
                             this.prefix + " res: " + this.res);
@@ -98,7 +96,7 @@ public class OLSURLConnection extends URLConnection {
                     new FileNotFoundException("name: " + this.name +
                                               " prefix: " + this.prefix +
                                               " res: " + this.res);
-                logger.throwing(this.CLASS_NAME, "getInputStream", t);
+                logger.throwing(OLSURLConnection.CLASS_NAME, "getInputStream", t);
                 throw t;
             }
         } catch (SQLException e) {
@@ -106,7 +104,7 @@ public class OLSURLConnection extends URLConnection {
                 new IOException("SQLException when trying to load: " +
                                 this.res + " prefix: " + this.prefix +
                                 " error: " + e.getLocalizedMessage());
-            logger.throwing(this.CLASS_NAME, "getInputStream", ie);
+            logger.throwing(OLSURLConnection.CLASS_NAME, "getInputStream", ie);
             throw ie;
         } finally {
             OJVMUtil.closeDbResources(stmt, rs);
