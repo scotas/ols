@@ -12,7 +12,7 @@
   <property name="Wrap" value="wrap"/>
   <property name="lucene-version" value="4.0-SNAPSHOT"/>
   <property name="base-version" value="4.0-SNAPSHOT"/>
-  <property name="ols-version" value="2.0.5"/>
+  <property name="ols-version" value="2.0.6"/>
   <property name="base-dir" value="../lucene"/>
   <property name="solr-dir" value=".."/>
   <property name="build-dir" value="${base-dir}/build"/>
@@ -431,7 +431,7 @@
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"
-      file="${solr-lib}/log4j-over-slf4j-1.6.4.jar"
+      file="${solrj-lib}/log4j-over-slf4j-1.6.4.jar"
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"
@@ -439,15 +439,15 @@
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"
-      file="${solr-lib}/slf4j-jdk14-1.6.4.jar"
+      file="${solrj-lib}/slf4j-jdk14-1.6.4.jar"
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"
-      file="${solr-lib}/slf4j-api-1.6.4.jar"
+      file="${solrj-lib}/slf4j-api-1.6.4.jar"
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"
-      file="${solr-lib}/jcl-over-slf4j-1.6.4.jar"
+      file="${solrj-lib}/jcl-over-slf4j-1.6.4.jar"
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"
@@ -459,7 +459,7 @@
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"
-      file="${solr-lib}/commons-io-2.1.jar"
+      file="${solrj-lib}/commons-io-2.1.jar"
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"
@@ -479,7 +479,7 @@
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"
-      file="${solr-lib}/wstx-asl-3.2.7.jar"
+      file="${solrj-lib}/wstx-asl-3.2.7.jar"
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"

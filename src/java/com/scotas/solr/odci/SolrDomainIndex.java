@@ -37,16 +37,10 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import oracle.ODCI.AnyData;
 import oracle.ODCI.ODCIColInfo;
-import oracle.ODCI.ODCICompQueryInfo;
 import oracle.ODCI.ODCIEnv;
-import oracle.ODCI.ODCIFilterInfo;
-import oracle.ODCI.ODCIFilterInfoList;
 import oracle.ODCI.ODCIIndexCtx;
 import oracle.ODCI.ODCIIndexInfo;
-import oracle.ODCI.ODCIOrderByInfo;
-import oracle.ODCI.ODCIOrderByInfoList;
 import oracle.ODCI.ODCIPartInfo;
 import oracle.ODCI.ODCIPredInfo;
 import oracle.ODCI.ODCIQueryInfo;
@@ -1273,7 +1267,6 @@ public class SolrDomainIndex implements CustomDatum, CustomDatumFactory {
             OJVMUtil.dumpQI(julLogger, qi);
             OJVMUtil.dumpEnv(julLogger, env);
         }
-        String sortStr = null;
         int key;
         int qiFlags = qi.getFlags().intValue();
         int numOps = (qi.getAncOps() != null) ? qi.getAncOps().length() : 0;
@@ -1310,11 +1303,6 @@ public class SolrDomainIndex implements CustomDatum, CustomDatumFactory {
                     mltCol = par.getParameter("DefaultColumn");
             }
         }
-        String extraCols = par.getParameter("ExtraCols");
-        if (sortval == null || sortval.length() == 0)
-            sortStr = getSortStr(qi,extraCols);
-        else
-            sortStr = sortval;
         
         boolean firstRowHint =
             (qiFlags & QUERY_FIRST_ROWS) == QUERY_FIRST_ROWS;
@@ -1360,14 +1348,15 @@ public class SolrDomainIndex implements CustomDatum, CustomDatumFactory {
                  startIndex = 0;
                  endIndex = Integer.MAX_VALUE - 1;
                }
-        // inject filter by expresion defined at index creation time
-        if (qi.getCompInfo() != null && qi.getCompInfo().getPredInfo() != null) {
-            queryString = addFilterByExp(qi.getCompInfo().getPredInfo(), queryString, extraCols);
-        }
+        // inject filter by expresion defined at index creation time, implemented in PLSQL, this is a workaround for the fact that ODCIQueryInfo.getCompInfo() is not implemented in Oracle 12c
+        //if (qi.getCompInfo() != null && qi.getCompInfo().getPredInfo() != null) {
+        //    queryString = addFilterByExp(qi.getCompInfo().getPredInfo(), queryString, extraCols);
+        //}
         if (logger.isInfoEnabled()) {
             logger.info("from: '" + startIndex + "'");
             logger.info("to: '" + endIndex + "'");
             logger.info("queryString: '" + queryString + "'");
+            logger.info("sortval: '" + sortval + "'");
         }
         SolrIndexContext sbtctx = new SolrIndexContext();
         String tableSchema = ia.getIndexCols().getElement(0).getTableSchema();
@@ -1379,7 +1368,7 @@ public class SolrDomainIndex implements CustomDatum, CustomDatumFactory {
         StringBuffer qryStr =
             new StringBuffer("http://" + searcherHost + "/select?wt=javabin&omitHeader=true");
         try {
-            qryStr.append("&sort=").append(URLEncoder.encode(sortStr, "UTF-8"));
+            qryStr.append("&sort=").append(URLEncoder.encode(sortval, "UTF-8"));
             qryStr.append("&core=").append(URLEncoder.encode(directoryPrefix, "UTF-8"));
             qryStr.append("&fl=").append(URLEncoder.encode(flStr, "UTF-8"));
             qryStr.append("&q=").append(URLEncoder.encode(queryString, "UTF-8"));
@@ -2242,124 +2231,7 @@ public class SolrDomainIndex implements CustomDatum, CustomDatumFactory {
         logger.info("new ExtraCols: " + str);
         return str;
     }
-    
-    /**
-     * Modify queryString with information sent by the RDBMS
-     * Pushed Down Predicates, for example:
-     *      col < val            => alias:[* TO val}, Flags:0, Stop:  val
-     *      col >  val           => alias:[val TO *], Flags:0, Start: val
-     *      col >= val           => alias:[val TO *], Flags:4, Start: val
-     *      col <= val           => alias:[* TO val}, Flags:8, Stop:  val
-     *      col between n AND m  => alias:[n TO m], eq [col >= val and col <= val]
-     *      col = val            => alias:(val), Flags:8|4|1, Start|Stop: val
-     *      col <> val           => -alias:(val), Flags:256, Start|Stop: val
-     * @param pred
-     * @param queryString
-     * @return String using ODCIFilterInfoList flags
-     */
-    private static String addFilterByExp(ODCIFilterInfoList pred, String queryString, String extraCols) throws SQLException {
-        ODCIFilterInfo filters[] = pred.getArray();
-        //System.out.println("extraCols: " + extraCols);
-        String strQry = queryString;
-        for (int i=0;i<filters.length;i++) { // find alias in ExtraCols Parameter
-            ODCIColInfo col = filters[i].getColInfo();
-            AnyData start = filters[i].getStrt();
-            AnyData stop = filters[i].getStop();
-            String colName = col.getColName().replaceAll("\"", "");
-            String aliasName = "";
-            //System.out.print("col: " + colName + " ");
-            String extraColsArr[] = getExtraColsArr(extraCols);
-            int j=0;
-            while(j<extraColsArr.length) {
-                int pos = extraColsArr[j].lastIndexOf(' ');
-                String colStr = extraColsArr[j].substring(0, pos).trim().replaceAll("\"", "");
-                if (colName.equalsIgnoreCase(colStr)) {
-                    aliasName = extraColsArr[j].substring(pos+1).trim().replaceAll("\"", "");
-                    break; // found
-                }
-                j++;
-            }
-            if (j == extraColsArr.length)
-                throw new SQLException("addFilterByExp: Internal error, col: '" + 
-                                       colName + "' not in ExtraCols:\n" + extraCols);
-            int flags = filters[i].getFlags().intValue();
-            if ((flags & PredNotEqual) == PredNotEqual) {
-                // AND -alias:"val"
-                strQry = strQry + " AND -" + aliasName + ":\"" + OJVMUtil.getAnyDataValue(stop) + "\"";
-            } else if ((flags & (PredExactMatch|PredIncludeStart|PredIncludeStop)) 
-                       == (PredExactMatch|PredIncludeStart|PredIncludeStop)) {
-                // AND alias:"val"
-                strQry = strQry + " AND " + aliasName + ":\"" + OJVMUtil.getAnyDataValue(start) + "\"";
-            } else if (flags == 0 && start != null) {
-                // AND alias:{val TO *}
-                strQry = strQry + " AND " + aliasName + ":{" + OJVMUtil.getAnyDataValue(start) + " TO *}";
-            } else if (flags == 0 && stop != null) {
-                // AND alias:{* TO val}
-                strQry = strQry + " AND " + aliasName + ":{* TO " + OJVMUtil.getAnyDataValue(stop) + "}";
-            } else if ((flags & PredIncludeStart) == PredIncludeStart) {
-                // AND alias:[val TO *]
-                strQry = strQry + " AND " + aliasName + ":[" + OJVMUtil.getAnyDataValue(start) + " TO *]";
-            } else if ((flags & PredIncludeStop) == PredIncludeStop) {
-                // AND alias:[* TO val]
-                strQry = strQry + " AND " + aliasName + ":[* TO " + OJVMUtil.getAnyDataValue(stop) + "]";
-            }
-        }
-        if (strQry.startsWith(" AND "))
-            strQry = strQry.substring(5);
-        logger.info("new queryString: " + strQry);
-        return strQry;
-    }
 
-    /**
-     * Sort string could be defined using 
-     * order by sscore() [asc|desc] (traditional domain index way)
-     * or using information provided composite domain index
-     * order by col1 [asc|desc], col2 [asc|desc], ..
-     * @param qi
-     * @param extraCols
-     * @return String using QueryInfo flags
-     */
-    private static String getSortStr(ODCIQueryInfo qi, String extraCols) throws SQLException {
-        String sortStr;
-        int qiFlags = qi.getFlags().intValue();
-        ODCICompQueryInfo compQry = qi.getCompInfo();
-        //System.out.println("extraCols: " + extraCols);
-        if (compQry != null && compQry.getObyInfo() != null && compQry.getObyInfo().length() > 0) {
-            sortStr = "";
-            ODCIOrderByInfoList obyLst = compQry.getObyInfo();
-            ODCIOrderByInfo arr[] = obyLst.getArray();
-            String extraColsArr[] = getExtraColsArr(extraCols);
-            for (int i=0;i<arr.length;i++) {
-                ODCIOrderByInfo obyInfo = arr[i];
-                if (obyInfo.getExprType().intValue() == 2) {
-                    // ExprType == 2 sscore operator
-                    if (obyInfo.getSortOrder().intValue() == 1)
-                        sortStr = sortStr + ",score asc";
-                    else
-                        sortStr = sortStr + ",score desc";
-                } else
-                    for (int j=0;j<extraColsArr.length;j++) {
-                        int pos = extraColsArr[j].lastIndexOf(' ');
-                        String col = extraColsArr[j].substring(0, pos).trim().replaceAll("\"", "");
-                        String alias = extraColsArr[j].substring(pos+1).trim().replaceAll("\"", "");
-                        //System.out.println("col: " + col + " alias: " + alias);
-                        if (col.equalsIgnoreCase(obyInfo.getExprName())) {
-                            if (obyInfo.getSortOrder().intValue() == 1)
-                                sortStr = sortStr + "," + alias + " asc";
-                            else
-                                sortStr = sortStr + "," + alias + " desc";
-                        }
-                    }
-            }
-            sortStr = sortStr.substring(1);
-        } else
-            sortStr =
-                  (((qiFlags & QUERY_SORT_ASC) == QUERY_SORT_ASC) ? "score asc" :
-                   "score desc"); // no scontains(col,qry,sort) option, use ODCI flags
-        logger.info("Computed sort string: " + sortStr);
-        return sortStr;
-    }
-    
     private static String [] getExtraColsArr(String extraCols) {
         Matcher matcher = patternColAliasList.matcher(extraCols);
         ArrayList <String>arrCols = new ArrayList<String>();

@@ -10,7 +10,6 @@ import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import oracle.ODCI.AnyData;
 import oracle.ODCI.ODCIEnv;
 import oracle.ODCI.ODCIIndexInfo;
 import oracle.ODCI.ODCIPartInfo;
@@ -178,40 +177,6 @@ public class OJVMUtil {
       } finally {
             OJVMUtil.closeDbResources(cs, null);
       }
-    }
-
-    public static String getAnyDataValue(AnyData a) throws SQLException {
-        String typeName = a.gettypename();
-        if ("SYS.NUMBER".equals(typeName))
-            return a.AccessNumber().toString();
-        else if ("SYS.BINARY_DOUBLE".equals(typeName))
-            return a.AccessBDouble().toString();
-        else if ("SYS.BINARY_FLOAT".equals(typeName))
-            return a.AccessBFloat().toString();
-        else if ("SYS.VARCHAR".equals(typeName))
-            return a.AccessVarchar();
-        else if ("SYS.VARCHAR2".equals(typeName))
-            return a.AccessVarchar2();
-        else if ("SYS.NVARCHAR2".equals(typeName))
-            return a.AccessNVarchar2().toString();
-        else if ("SYS.CHAR".equals(typeName))
-            return a.AccessChar();
-        else if ("SYS.NCHAR".equals(typeName))
-            return a.AccessNchar().toString();
-        else if ("SYS.DATE".equals(typeName))
-            return a.AccessDate().toString();
-        else if ("SYS.TIMESTAMP".equals(typeName))
-            return a.AccessTimestamp().toString();
-        else if ("SYS.TIMESTAMPLTZ".equals(typeName))
-            return a.AccessTimestampLTZ().toString();
-        else if ("SYS.TIMESTAMPTZ".equals(typeName))
-            return a.AccessTimestampTZ().toString();
-        else if ("SYS.INTERVALYM".equals(typeName))
-            return a.AccessIntervalYM();
-        else if ("SYS.INTERVALDS".equals(typeName))
-            return a.AccessIntervalDS();
-        else
-            throw new SQLException("getAnyDataValue: NOT a Scalar Type in AnyData: " + typeName); 
     }
     
     public static void logSQLError(java.math.BigDecimal errCode, String errMsg) {

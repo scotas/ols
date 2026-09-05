@@ -75,6 +75,77 @@ type body SolrDomainIndex is
     end if;
   end getIndexPrefix;
 
+  static function getSortStr(qi sys.ODCIQueryInfo, extraCols VARCHAR2) return VARCHAR2 is
+    sortStr       VARCHAR2(4000) := '';
+    extraCol      VARCHAR2(4000);
+    colName       VARCHAR2(4000);
+    aliasName     VARCHAR2(4000);
+    exprName      VARCHAR2(4000);
+    entryLength   PLS_INTEGER;
+    extraColsArr  SYS.ODCIVARCHAR2LIST := SYS.ODCIVARCHAR2LIST();
+    extraColNo    PLS_INTEGER := 1;
+    obyInfo       SYS.ODCIOrderByInfo;
+    compInfo      SYS.ODCICompQueryInfo;
+    obyCount      PLS_INTEGER;
+  begin
+    loop
+      extraCol := regexp_substr(
+        extraCols,
+        '(^|,)(([^,()]|\([^()]*\))*)',
+        1,
+        extraColNo);
+      exit when extraCol is null;
+      if substr(extraCol,1,1) = ',' then
+        extraCol := substr(extraCol,2);
+      end if;
+      extraCol := trim(extraCol);
+      if extraCol is not null then
+        extraColsArr.extend;
+        extraColsArr(extraColsArr.last) := extraCol;
+      end if;
+      extraColNo := extraColNo + 1;
+    end loop;
+
+    compInfo := qi.CompInfo;
+    if compInfo is not null and compInfo.ObyInfo is not null and compInfo.ObyInfo.count > 0 then
+      obyCount := compInfo.ObyInfo.count;
+      for i in 1 .. obyCount loop
+        obyInfo := compInfo.ObyInfo(i);
+        if obyInfo.ExprType = 2 then
+          if obyInfo.SortOrder = 1 then
+            sortStr := sortStr || ',score asc';
+          else
+            sortStr := sortStr || ',score desc';
+          end if;
+        else
+          for j in 1 .. extraColsArr.count loop
+            extraCol := extraColsArr(j);
+            entryLength := regexp_instr(extraCol,'[[:space:]]+[^[:space:]]+[[:space:]]*$',1,1,0);
+            if entryLength > 0 then
+              colName := replace(trim(substr(extraCol,1,entryLength-1)),'"','');
+              aliasName := replace(trim(substr(extraCol,entryLength)),'"','');
+              exprName := replace(obyInfo.ExprName,'"','');
+              if upper(colName) = upper(exprName) then
+                if obyInfo.SortOrder = 1 then
+                  sortStr := sortStr || ',' || aliasName || ' asc';
+                else
+                  sortStr := sortStr || ',' || aliasName || ' desc';
+                end if;
+              end if;
+            end if;
+          end loop;
+        end if;
+      end loop;
+      if sortStr is not null and length(sortStr) > 0 then
+        return substr(sortStr,2);
+      end if;
+    end if;
+    if bitand(nvl(qi.Flags,0),sys.ODCIConst.QuerySortAsc) = sys.ODCIConst.QuerySortAsc then
+      return 'score asc';
+    end if;
+    return 'score desc';
+  end getSortStr;
+
   static function ODCIGetInterfaces(
     ifclist out NOCOPY sys.ODCIObjectList) return number is
   begin
@@ -182,6 +253,22 @@ type body SolrDomainIndex is
      return ODCIIndexStart(sctx,ia,op,qi,strt,stop,cmpval,null,env);
   end ODCIIndexStart;
 
+  STATIC FUNCTION ODCIIndexStart(sctx IN OUT NOCOPY SolrDomainIndex,
+      ia SYS.ODCIIndexInfo, op SYS.ODCIPredInfo, qi sys.ODCIQueryInfo,
+      strt number, stop number,
+      cmpval VARCHAR2, sortval VARCHAR2, env SYS.ODCIEnv) RETURN NUMBER is
+      sortStr           VARCHAR2(4000);
+      extraCols         VARCHAR2(4000);
+      prefix            VARCHAR2(255) := getIndexPrefix(ia);
+  begin
+     extraCols := NVL(GetParameter(prefix,'ExtraCols'),'');
+     if (sortval is null or sortval = '') then
+        sortStr := getSortStr(qi,extraCols);
+     else
+        sortStr := sortval;
+     end if;
+     return ODCIIndexStartInternal(sctx,ia,op,qi,strt,stop,cmpval,sortStr,env);
+  end ODCIIndexStart;
 
   MEMBER FUNCTION ODCIIndexFetch(nrows NUMBER, rids OUT NOCOPY SYS.ODCIridlist, env SYS.ODCIEnv) RETURN NUMBER is
     trids   SYS.ODCIridlist;
@@ -338,12 +425,10 @@ type body SolrDomainIndex is
     idx_name VARCHAR2(30) := index_name;
     is_part varchar2(3);
     par_degree number;
-    v_version VARCHAR2(4000);
   begin
-    select banner into v_version from v$version where rownum=1;
     SELECT OWNER,PARTITIONED,DEGREE INTO INDEX_SCHEMA,IS_PART,PAR_DEGREE FROM ALL_INDEXES WHERE INDEX_NAME=IDX_NAME;
-    IF (IS_PART = 'YES' AND instr(v_version,'19c')>0) THEN
-      if (PAR_DEGREE > 1 AND instr(v_version,'19c')>0) then
+    IF (IS_PART = 'YES' AND DBMS_DB_VERSION.VERSION >= 19) THEN
+      if (PAR_DEGREE > 1 AND DBMS_DB_VERSION.VERSION >= 19) then
         EXECUTE IMMEDIATE 'begin run_in_parallel('''||INDEX_SCHEMA||''','''||IDX_NAME||''','||PAR_DEGREE||',''SSYNC_PARTITION''); end;';
       else
         FOR P IN (SELECT PARTITION_NAME FROM ALL_IND_PARTITIONS  WHERE INDEX_OWNER=INDEX_SCHEMA AND INDEX_NAME=IDX_NAME) LOOP
@@ -360,7 +445,7 @@ type body SolrDomainIndex is
       INDEX_SCHEMA := SYS_CONTEXT('USERENV','CURRENT_SCHEMA');
       SELECT PARTITIONED,DEGREE INTO IS_PART,PAR_DEGREE FROM ALL_INDEXES WHERE INDEX_NAME=IDX_NAME and OWNER=INDEX_SCHEMA;
       IF (IS_PART = 'YES') THEN
-        if (PAR_DEGREE > 1 AND instr(v_version,'19c')>0) then
+        if (PAR_DEGREE > 1 AND DBMS_DB_VERSION.VERSION >= 19) then
           EXECUTE IMMEDIATE 'begin run_in_parallel('''||INDEX_SCHEMA||''','''||IDX_NAME||''','||PAR_DEGREE||',''SSYNC_PARTITION''); end;';
         else
           FOR P IN (SELECT PARTITION_NAME FROM ALL_IND_PARTITIONS  WHERE INDEX_OWNER=INDEX_SCHEMA AND INDEX_NAME=IDX_NAME) LOOP
@@ -460,11 +545,9 @@ type body SolrDomainIndex is
     idx_name VARCHAR2(30) := index_name;
     is_part varchar2(3);
     par_degree number;
-    v_version VARCHAR2(4000);
   begin
-    select banner into v_version from v$version where rownum=1;
     SELECT OWNER,PARTITIONED,DEGREE INTO INDEX_SCHEMA,IS_PART,PAR_DEGREE FROM ALL_INDEXES WHERE INDEX_NAME=IDX_NAME;
-    IF (IS_PART = 'YES' AND instr(v_version,'19c')>0) THEN
+    IF (IS_PART = 'YES' AND DBMS_DB_VERSION.VERSION >= 19) THEN
       EXECUTE IMMEDIATE 'begin run_in_parallel('''||INDEX_SCHEMA||''','''||IDX_NAME||''','||PAR_DEGREE||',''SOPTIMIZE_PARTITION''); end;';
     ELSE
       OPTIMIZE(INDEX_SCHEMA,INDEX_NAME);
@@ -475,7 +558,7 @@ type body SolrDomainIndex is
     when too_many_rows then
       INDEX_SCHEMA := SYS_CONTEXT('USERENV','CURRENT_SCHEMA');
       SELECT PARTITIONED,DEGREE INTO IS_PART,PAR_DEGREE FROM ALL_INDEXES WHERE INDEX_NAME=IDX_NAME and OWNER=INDEX_SCHEMA;
-      IF (IS_PART = 'YES' AND instr(v_version,'19c')>0) THEN
+      IF (IS_PART = 'YES' AND DBMS_DB_VERSION.VERSION >= 19) THEN
         EXECUTE IMMEDIATE 'begin run_in_parallel('''||INDEX_SCHEMA||''','''||IDX_NAME||''','||PAR_DEGREE||',''SOPTIMIZE_PARTITION''); end;';
       ELSE
         OPTIMIZE(INDEX_SCHEMA,INDEX_NAME);
@@ -512,11 +595,9 @@ type body SolrDomainIndex is
     idx_name VARCHAR2(30) := index_name;
     is_part varchar2(3);
     par_degree number;
-    v_version VARCHAR2(4000);
   begin
-    select banner into v_version from v$version where rownum=1;
     SELECT OWNER,PARTITIONED,DEGREE INTO INDEX_SCHEMA,IS_PART,PAR_DEGREE FROM ALL_INDEXES WHERE INDEX_NAME=IDX_NAME;
-    IF (IS_PART = 'YES' AND instr(v_version,'19c')>0) THEN
+    IF (IS_PART = 'YES' AND DBMS_DB_VERSION.VERSION >= 19) THEN
       EXECUTE IMMEDIATE 'begin run_in_parallel('''||INDEX_SCHEMA||''','''||IDX_NAME||''','||PAR_DEGREE||',''SREBUILD_PARTITION''); end;';
     ELSE
       REBUILD(INDEX_SCHEMA,INDEX_NAME);
@@ -527,7 +608,7 @@ type body SolrDomainIndex is
     when too_many_rows then
       INDEX_SCHEMA := SYS_CONTEXT('USERENV','CURRENT_SCHEMA');
       SELECT PARTITIONED,DEGREE INTO IS_PART,PAR_DEGREE FROM ALL_INDEXES WHERE INDEX_NAME=IDX_NAME and OWNER=INDEX_SCHEMA;
-      IF (IS_PART = 'YES' AND instr(v_version,'19c')>0) THEN
+      IF (IS_PART = 'YES' AND DBMS_DB_VERSION.VERSION >= 19) THEN
         EXECUTE IMMEDIATE 'begin run_in_parallel('''||INDEX_SCHEMA||''','''||IDX_NAME||''','||PAR_DEGREE||',''SREBUILD_PARTITION''); end;';
       ELSE
         REBUILD(INDEX_SCHEMA,INDEX_NAME);

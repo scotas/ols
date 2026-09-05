@@ -29,6 +29,8 @@ create type SolrDomainIndex authid current_user as object
 (
   scanctx integer,
   STATIC FUNCTION getIndexPrefix(ia SYS.ODCIIndexInfo) RETURN VARCHAR2,
+
+  STATIC FUNCTION getSortStr(qi sys.ODCIQueryInfo, extraCols VARCHAR2) RETURN VARCHAR2,
   
   STATIC FUNCTION getParameter(prefix VARCHAR2, paramName IN VARCHAR2) RETURN VARCHAR2 AS LANGUAGE JAVA NAME
         'com.scotas.lucene.indexer.Parameters.getParameterByIndex(
@@ -212,15 +214,20 @@ create type SolrDomainIndex authid current_user as object
         cmpval VARCHAR2, env SYS.ODCIEnv) RETURN NUMBER,
 
   STATIC FUNCTION ODCIIndexStart(sctx IN OUT NOCOPY SolrDomainIndex,
-        ia SYS.ODCIIndexInfo, op SYS.ODCIPredInfo, qi sys.ODCIQueryInfo,
-        strt number, stop number,
-        cmpval VARCHAR2, sortval VARCHAR2, env SYS.ODCIEnv) RETURN NUMBER AS LANGUAGE JAVA NAME
-	      'com.scotas.solr.odci.SolrDomainIndex.ODCIStart(com.scotas.solr.odci.SolrDomainIndex[],
-                oracle.ODCI.ODCIIndexInfo, 
-		            oracle.ODCI.ODCIPredInfo, 
-		            oracle.ODCI.ODCIQueryInfo,
-                java.math.BigDecimal, java.math.BigDecimal, 
-                java.lang.String, java.lang.String, oracle.ODCI.ODCIEnv) return java.math.BigDecimal',
+      ia SYS.ODCIIndexInfo, op SYS.ODCIPredInfo, qi sys.ODCIQueryInfo,
+      strt number, stop number,
+      cmpval VARCHAR2, sortval VARCHAR2, env SYS.ODCIEnv) RETURN NUMBER,
+
+  STATIC FUNCTION ODCIIndexStartInternal(sctx IN OUT NOCOPY SolrDomainIndex,
+          ia SYS.ODCIIndexInfo, op SYS.ODCIPredInfo, qi sys.ODCIQueryInfo,
+          strt number, stop number,
+          cmpval VARCHAR2, sortval VARCHAR2, env SYS.ODCIEnv) RETURN NUMBER AS LANGUAGE JAVA NAME
+          'com.scotas.solr.odci.SolrDomainIndex.ODCIStart(com.scotas.solr.odci.SolrDomainIndex[],
+                  oracle.ODCI.ODCIIndexInfo, 
+                  oracle.ODCI.ODCIPredInfo, 
+                  oracle.ODCI.ODCIQueryInfo,
+                  java.math.BigDecimal, java.math.BigDecimal, 
+                  java.lang.String, java.lang.String, oracle.ODCI.ODCIEnv) return java.math.BigDecimal',
 
   MEMBER FUNCTION ODCIIndexFetch(nrows NUMBER, rids OUT NOCOPY SYS.ODCIridlist, env SYS.ODCIEnv) RETURN NUMBER,
 

@@ -37,6 +37,23 @@ begin
   dbms_java.grant_permission( 'LUCENEUSER', 'SYS:java.net.SocketPermission', 'localhost:1024-', 'resolve,connect' );
   dbms_java.grant_permission( 'LUCENEUSER','SYS:java.net.SocketPermission', vHostName||':1024-', 'resolve,connect' );
   dbms_java.grant_permission( 'LUCENEUSER', 'SYS:java.net.NetPermission','setDefaultAuthenticator', '' );
+  dbms_java.grant_permission( 'LUCENEUSER', 'SYS:java.lang.RuntimePermission', 'accessClassInPackage.sun.misc', '' );
+  dbms_java.grant_permission( 'LUCENEUSER', 'SYS:javax.management.MBeanServerPermission', 'createMBeanServer', '' );
+  commit;
+end;
+/
+
+declare
+  vHostName varchar2(4000);
+begin
+  SELECT SYS_CONTEXT('USERENV','SERVER_HOST') INTO vHostName FROM dual;
+
+  dbms_java.grant_permission( 'LUCENEUSER', 'SYS:java.net.URLPermission', 'http://localhost:9099/update', 'GET:' );
+  dbms_java.grant_permission( 'LUCENEUSER', 'SYS:java.net.URLPermission', 'http://'||vHostName||':9099/update', 'GET:' );
+  dbms_java.grant_permission( 'LUCENEUSER', 'SYS:java.net.URLPermission', 'http://localhost:9099/update', 'POST:' );
+  dbms_java.grant_permission( 'LUCENEUSER', 'SYS:java.net.URLPermission', 'http://'||vHostName||':9099/update', 'POST:' );
+  dbms_java.grant_permission( 'LUCENEUSER', 'SYS:java.net.URLPermission', 'http://localhost:9099/select', 'GET:' );
+  dbms_java.grant_permission( 'LUCENEUSER', 'SYS:java.net.URLPermission', 'http://'||vHostName||':9099/select', 'GET:' );
   commit;
 end;
 /

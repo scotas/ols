@@ -92,19 +92,6 @@ begin
 end;
 /
 
-declare
-  vHostName varchar2(4000);
-begin
-  SELECT SYS_CONTEXT('USERENV','SERVER_HOST') INTO vHostName FROM dual;
-  -- Parallel Index Searcher, RMI grants
-  dbms_java.grant_permission( 'LUCENE', 'SYS:java.net.SocketPermission', 'localhost:1024-', 'accept,connect,listen,resolve');
-  dbms_java.grant_permission( 'LUCENE', 'SYS:java.net.SocketPermission', vHostName||':1024-', 'accept,connect,listen,resolve');
-  dbms_java.grant_permission( 'LUCENE', 'SYS:java.lang.RuntimePermission', 'setContextClassLoader', '' );
-  
-  commit;
-end;
-/
-
 begin
   -- Misc Solr permission
   dbms_java.grant_permission('LUCENE', 'SYS:javax.management.MBeanServerPermission', 'findMBeanServer', '' );
@@ -128,4 +115,31 @@ begin
   end if;
 end;
 /
+
+declare
+  vHostName varchar2(4000);
+begin
+  SELECT SYS_CONTEXT('USERENV','SERVER_HOST') INTO vHostName FROM dual;
+  -- Parallel Index Searcher, RMI grants
+  dbms_java.grant_permission( 'LUCENE', 'SYS:java.net.SocketPermission', 'localhost:1024-', 'accept,connect,listen,resolve');
+  dbms_java.grant_permission( 'LUCENE', 'SYS:java.net.SocketPermission', vHostName||':1024-', 'accept,connect,listen,resolve');
+  commit;
+end;
+/
+
+declare
+  vHostName varchar2(4000);
+begin
+  SELECT SYS_CONTEXT('USERENV','SERVER_HOST') INTO vHostName FROM dual;
+  -- URL permissions for Solr Servlet, required for parallel index searcher
+  dbms_java.grant_permission( 'LUCENE', 'SYS:java.net.URLPermission', 'http://localhost:9099/update', 'GET:' );
+  dbms_java.grant_permission( 'LUCENE', 'SYS:java.net.URLPermission', 'http://'||vHostName||':9099/update', 'GET:' );
+  dbms_java.grant_permission( 'LUCENE', 'SYS:java.net.URLPermission', 'http://localhost:9099/update', 'POST:' );
+  dbms_java.grant_permission( 'LUCENE', 'SYS:java.net.URLPermission', 'http://'||vHostName||':9099/update', 'POST:' );
+  dbms_java.grant_permission( 'LUCENE', 'SYS:java.net.URLPermission', 'http://localhost:9099/select', 'GET:' );
+  dbms_java.grant_permission( 'LUCENE', 'SYS:java.net.URLPermission', 'http://'||vHostName||':9099/select', 'GET:' );
+  commit;
+end;
+/
+
 exit

@@ -96,13 +96,7 @@ import com.scotas.lucene.util.StringUtils;
 import java.util.Map;
 import java.util.Random;
 
-import oracle.ODCI.AnyData;
 import oracle.ODCI.ODCIColInfo;
-import oracle.ODCI.ODCICompQueryInfo;
-import oracle.ODCI.ODCIFilterInfo;
-import oracle.ODCI.ODCIFilterInfoList;
-import oracle.ODCI.ODCIOrderByInfo;
-import oracle.ODCI.ODCIOrderByInfoList;
 
 import org.apache.lucene.util.Version;
 
@@ -1605,10 +1599,11 @@ public class LuceneDomainIndex implements CustomDatum, CustomDatumFactory {
             if ("LHIGHLIGHT".equals(opName))
                 highlightText = true;
         }
-        String extraCols = pars.getParameter("ExtraCols");
-        if (sortval == null || sortval.length() == 0)
-            sortStr = getSortStr(qi, extraCols);
-        else
+        //String extraCols = pars.getParameter("ExtraCols");
+        // implmented in PLSQL, not needed here
+        //if (sortval == null || sortval.length() == 0)
+        //    sortStr = getSortStr(qi, extraCols);
+        //else
             sortStr = sortval;
 
         boolean firstRowHint =
@@ -1625,10 +1620,10 @@ public class LuceneDomainIndex implements CustomDatum, CustomDatumFactory {
         IndexScan indexScan = getSearcher(searcherHost);
         sbtctx.setIndexScan(indexScan);
         String queryString = (cmpval == null) ? "" : cmpval.trim(); // Sanity check
-        // inject filter by expresion defined at index creation time
-        if (qi.getCompInfo() != null && qi.getCompInfo().getPredInfo() != null) {
-            queryString = addFilterByExp(qi.getCompInfo().getPredInfo(), queryString, extraCols);
-        }
+        // inject filter by expresion defined at index creation time, implemented in PLSQL
+        //if (qi.getCompInfo() != null && qi.getCompInfo().getPredInfo() != null) {
+        //    queryString = addFilterByExp(qi.getCompInfo().getPredInfo(), queryString, extraCols);
+        //}
         key = indexScan.start(directoryPrefix, queryString, sortStr, storeScore, firstRowHint);
         if (highlightText) {
             Query qry = indexScan.getQuery(key);
@@ -2377,123 +2372,5 @@ public class LuceneDomainIndex implements CustomDatum, CustomDatumFactory {
             str = str.substring(1);
         logger.info("ExtraCols: " + str);
         return str;
-    }
-    
-    /**
-     * Modify queryString with information sent by the RDBMS
-     * Pushed Down Predicates, for example:
-     *      col < val            => alias:[* TO val}, Flags:0, Stop:  val
-     *      col >  val           => alias:[val TO *], Flags:0, Start: val
-     *      col >= val           => alias:[val TO *], Flags:4, Start: val
-     *      col <= val           => alias:[* TO val}, Flags:8, Stop:  val
-     *      col between n AND m  => alias:[n TO m], eq [col >= val and col <= val]
-     *      col = val            => alias:(val), Flags:8|4|1, Start|Stop: val
-     *      col <> val           => -alias:(val), Flags:256, Start|Stop: val
-     * @param pred
-     * @param queryString
-     * @return String using ODCIFilterInfoList flags
-     */
-    private static String addFilterByExp(ODCIFilterInfoList pred, String queryString, String extraCols) throws SQLException {
-        ODCIFilterInfo filters[] = pred.getArray();
-        //System.out.println("extraCols: " + extraCols);
-        String strQry = queryString;
-        for (int i=0;i<filters.length;i++) { // find alias in ExtraCols Parameter
-            ODCIColInfo col = filters[i].getColInfo();
-            AnyData start = filters[i].getStrt();
-            AnyData stop = filters[i].getStop();
-            String colName = col.getColName().replaceAll("\"", "");
-            String aliasName = "";
-            //System.out.print("col: " + colName + " ");
-            String extraColsArr[] = extraCols.split(",");
-            int j=0;
-            while(j<extraColsArr.length) {
-                String arrNameAlias[] = extraColsArr[j].trim().split("\\s+");
-                String colStr = arrNameAlias[0];
-                if (colName.equalsIgnoreCase(colStr)) {
-                    aliasName = arrNameAlias[1].replaceAll("\"", "");
-                    break; // found
-                }
-                j++;
-            }
-            if (j == extraColsArr.length)
-                throw new SQLException("addFilterByExp: Internal error, col: '" + 
-                                       colName + "' not in ExtraCols:\n" + extraCols);
-            int flags = filters[i].getFlags().intValue();
-            if ((flags & PredNotEqual) == PredNotEqual) {
-                // AND -alias:"val"
-                strQry = strQry + " AND -" + aliasName + ":\"" + OJVMUtil.getAnyDataValue(stop) + "\"";
-            } else if ((flags & (PredExactMatch|PredIncludeStart|PredIncludeStop)) 
-                       == (PredExactMatch|PredIncludeStart|PredIncludeStop)) {
-                // AND alias:(val)
-                strQry = strQry + " AND " + aliasName + ":\"" + OJVMUtil.getAnyDataValue(start) + "\"";
-            } else if (flags == 0 && start != null) {
-                // AND alias:{val TO *}
-                strQry = strQry + " AND " + aliasName + ":{" + OJVMUtil.getAnyDataValue(start) + " TO *}";
-            } else if (flags == 0 && stop != null) {
-                // AND alias:{* TO val}
-                strQry = strQry + " AND " + aliasName + ":{* TO " + OJVMUtil.getAnyDataValue(stop) + "}";
-            } else if ((flags & PredIncludeStart) == PredIncludeStart) {
-                // AND alias:[val TO *]
-                strQry = strQry + " AND " + aliasName + ":[" + OJVMUtil.getAnyDataValue(start) + " TO *]";
-            } else if ((flags & PredIncludeStop) == PredIncludeStop) {
-                // AND alias:[* TO val]
-                strQry = strQry + " AND " + aliasName + ":[* TO " + OJVMUtil.getAnyDataValue(stop) + "]";
-            }
-        }
-        if (strQry.startsWith(" AND "))
-            strQry = strQry.substring(5);
-        logger.info("new queryString: " + strQry);
-        return strQry;
-    }
-
-    /**
-     * Sort string could be defined using 
-     * order by sscore() [asc|desc] (traditional domain index way)
-     * or using information provided composite domain index
-     * order by col1 [asc|desc], col2 [asc|desc], ..
-     * @param qi
-     * @param extraCols
-     * @return String using QueryInfo flags
-     */
-    private static String getSortStr(ODCIQueryInfo qi, String extraCols) throws SQLException {
-        String sortStr;
-        int qiFlags = qi.getFlags().intValue();
-        ODCICompQueryInfo compQry = qi.getCompInfo();
-        if (compQry != null && compQry.getObyInfo() != null && compQry.getObyInfo().length()>0) {
-            sortStr = "";
-            ODCIOrderByInfoList obyLst = compQry.getObyInfo();
-            ODCIOrderByInfo arr[] = obyLst.getArray();
-            String extraColsArr[] = extraCols.split(",");
-            for (int i=0;i<arr.length;i++) {
-                ODCIOrderByInfo obyInfo = arr[i];
-                if (obyInfo.getExprType().intValue() == 2) {
-                    // ExprType == 2 lscore operator
-                    if (obyInfo.getSortOrder().intValue() == 1)
-                        sortStr = "ASC";
-                    else
-                        sortStr = "DESC";
-                } else
-                    for (int j=0;j<extraColsArr.length;j++) {
-                        String arrNameAlias[] = extraColsArr[j].trim().split("\\s+");
-                        String col = arrNameAlias[0];
-                        String alias = arrNameAlias[1].replaceAll("\"", "");
-                        System.out.println("col: " + col + " alias: " + alias);
-                        if (col.equalsIgnoreCase(obyInfo.getExprName())) {
-                            //TODO: check FormatCols argument to verify int,float,string sort impl.
-                            if (obyInfo.getSortOrder().intValue() == 1)
-                                sortStr = sortStr + "," + alias + ":ASC";
-                            else
-                                sortStr = sortStr + "," + alias + ":DESC";
-                        }
-                    }
-            }
-            if (sortStr.startsWith(","))
-                sortStr = sortStr.substring(1);
-        } else
-            sortStr =
-                  (((qiFlags & QUERY_SORT_ASC) == QUERY_SORT_ASC) ? "ASC" :
-                   "DESC"); // no lcontains(col,qry,sort) option, use ODCI flags
-        logger.info("Computed sort string: " + sortStr);
-        return sortStr;
     }
 }
