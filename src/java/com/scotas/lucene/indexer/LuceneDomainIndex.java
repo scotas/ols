@@ -1586,7 +1586,6 @@ public class LuceneDomainIndex implements CustomDatum, CustomDatumFactory {
         String directoryPrefix = getIndexPrefix(ia);
         Entry entry = OJVMDirectory.getCachedDirectory(directoryPrefix);
         Parameters pars = entry.getDirectory().getParameters();
-        String sortStr = null;
         int key;
         int qiFlags = qi.getFlags().intValue();
         int numOps = (qi.getAncOps() != null) ? qi.getAncOps().length() : 0;
@@ -1599,13 +1598,6 @@ public class LuceneDomainIndex implements CustomDatum, CustomDatumFactory {
             if ("LHIGHLIGHT".equals(opName))
                 highlightText = true;
         }
-        //String extraCols = pars.getParameter("ExtraCols");
-        // implmented in PLSQL, not needed here
-        //if (sortval == null || sortval.length() == 0)
-        //    sortStr = getSortStr(qi, extraCols);
-        //else
-            sortStr = sortval;
-
         boolean firstRowHint =
             (qiFlags & QUERY_FIRST_ROWS) == QUERY_FIRST_ROWS;
         LuceneDomainContext sbtctx = new LuceneDomainContext();
@@ -1619,16 +1611,11 @@ public class LuceneDomainIndex implements CustomDatum, CustomDatumFactory {
         String searcherHost = pars.getLuceneRandomSearcher();
         IndexScan indexScan = getSearcher(searcherHost);
         sbtctx.setIndexScan(indexScan);
-        String queryString = (cmpval == null) ? "" : cmpval.trim(); // Sanity check
-        // inject filter by expresion defined at index creation time, implemented in PLSQL
-        //if (qi.getCompInfo() != null && qi.getCompInfo().getPredInfo() != null) {
-        //    queryString = addFilterByExp(qi.getCompInfo().getPredInfo(), queryString, extraCols);
-        //}
-        key = indexScan.start(directoryPrefix, queryString, sortStr, storeScore, firstRowHint);
+        key = indexScan.start(directoryPrefix, cmpval, sortval, storeScore, firstRowHint);
         if (highlightText) {
             Query qry = indexScan.getQuery(key);
             String highlightColumn = columnName;
-            if (queryString.contains("*")) {
+            if (cmpval.contains("*")) {
                 highlightColumn =
                         pars.getParameter("HighlightColumn", columnName);
             }

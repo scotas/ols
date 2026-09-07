@@ -146,13 +146,6 @@ type body SolrDomainIndex is
     return 'score desc';
   end getSortStr;
 
-  static function ODCIGetInterfaces(
-    ifclist out NOCOPY sys.ODCIObjectList) return number is
-  begin
-    ifclist := sys.ODCIObjectList(sys.ODCIObject('SYS','ODCIINDEX2'));
-    return sys.ODCIConst.Success;
-  end ODCIGetInterfaces;
-
   STATIC FUNCTION addFilterByExp(pred SYS.ODCIFilterInfoList, queryString VARCHAR2, extraCols VARCHAR2) RETURN VARCHAR2 is
     strQry       VARCHAR2(32767) := queryString;
     extraCol     VARCHAR2(4000);
@@ -237,6 +230,13 @@ type body SolrDomainIndex is
     end if;
     return strQry;
   end addFilterByExp;
+
+  static function ODCIGetInterfaces(
+    ifclist out NOCOPY sys.ODCIObjectList) return number is
+  begin
+    ifclist := sys.ODCIObjectList(sys.ODCIObject('SYS','ODCIINDEX2'));
+    return sys.ODCIConst.Success;
+  end ODCIGetInterfaces;
 
   STATIC FUNCTION TextContains(Text IN VARCHAR2, Key IN VARCHAR2,
                                indexctx IN sys.ODCIIndexCtx, sctx IN OUT NOCOPY SolrDomainIndex, scanflg IN NUMBER) RETURN NUMBER is

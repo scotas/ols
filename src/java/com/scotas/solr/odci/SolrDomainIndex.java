@@ -1348,10 +1348,6 @@ public class SolrDomainIndex implements CustomDatum, CustomDatumFactory {
                  startIndex = 0;
                  endIndex = Integer.MAX_VALUE - 1;
                }
-        // inject filter by expresion defined at index creation time, implemented in PLSQL, this is a workaround for the fact that ODCIQueryInfo.getCompInfo() is not implemented in Oracle 12c
-        //if (qi.getCompInfo() != null && qi.getCompInfo().getPredInfo() != null) {
-        //    queryString = addFilterByExp(qi.getCompInfo().getPredInfo(), queryString, extraCols);
-        //}
         if (logger.isInfoEnabled()) {
             logger.info("from: '" + startIndex + "'");
             logger.info("to: '" + endIndex + "'");
