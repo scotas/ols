@@ -31,6 +31,8 @@ create type SolrDomainIndex authid current_user as object
   STATIC FUNCTION getIndexPrefix(ia SYS.ODCIIndexInfo) RETURN VARCHAR2,
 
   STATIC FUNCTION getSortStr(qi sys.ODCIQueryInfo, extraCols VARCHAR2) RETURN VARCHAR2,
+
+  STATIC FUNCTION addFilterByExp(pred SYS.ODCIFilterInfoList, queryString VARCHAR2, extraCols VARCHAR2) RETURN VARCHAR2,
   
   STATIC FUNCTION getParameter(prefix VARCHAR2, paramName IN VARCHAR2) RETURN VARCHAR2 AS LANGUAGE JAVA NAME
         'com.scotas.lucene.indexer.Parameters.getParameterByIndex(

@@ -14,13 +14,13 @@
   <property name="base-version" value="4.0-SNAPSHOT"/>
   <property name="ols-version" value="2.0.6"/>
   <property name="base-dir" value="../lucene"/>
-  <property name="solr-dir" value=".."/>
+  <property name="prj-dir" value=".."/>
   <property name="build-dir" value="${base-dir}/build"/>
   <property name="tmp-dir" value="${build-dir}/tmp"/>
   <property name="package-dir" value="${tmp-dir}/ols"/>
-  <property name="solr-dist" value="${solr-dir}/solr/dist"/>
-  <property name="solr-lib" value="${solr-dir}/solr/core/lib"/>
-  <property name="solrj-lib" value="${solr-dir}/solr/solrj/lib"/>
+  <property name="solr-dist" value="${prj-dir}/solr/dist"/>
+  <property name="solr-lib" value="${prj-dir}/solr/core/lib"/>
+  <property name="solrj-lib" value="${prj-dir}/solr/solrj/lib"/>
 
   <!-- Background server configurations -->
   <property name="db.searcher.job"  value="${db.usr}.IndexScanServJob#1"/>
@@ -451,10 +451,6 @@
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"
-      file="${base-dir}/lib/${junit.jar}"
-      failonerror="false" />
-    <loadjava-with-public-synonym
-      login="${db.usr}/${db.pwd}@${db.str}"
       file="${solr-lib}/commons-codec-1.7.jar"
       failonerror="false" />
     <loadjava-with-public-synonym
@@ -487,19 +483,19 @@
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"
-      file="${solr-lib}/commons-collections-3.2.1.jar"
+      file="${prj-dir}/solr/contrib/velocity/lib/commons-collections-3.2.1.jar"
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"
-      file="${solr-lib}/commons-beanutils-1.7.0.jar"
+      file="${prj-dir}/solr/contrib/velocity/lib/commons-beanutils-1.7.0.jar"
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"
-      file="${solr-lib}/velocity-1.6.4.jar"
+      file="${prj-dir}/solr/contrib/velocity/lib/velocity-1.6.4.jar"
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"
-      file="${solr-lib}/velocity-tools-2.0.jar"
+      file="${prj-dir}/solr/contrib/velocity/lib/velocity-tools-2.0.jar"
       failonerror="false" />
     <loadjava-with-public-synonym
       login="${db.usr}/${db.pwd}@${db.str}"
@@ -1083,7 +1079,7 @@
        includes="wstx-asl-3.2.7.jar,zookeeper-3.3.6.jar,http*.jar"/>
     </copy>
     <copy todir="${package-dir}/lib">
-      <fileset dir="${solr-dir}/solr/contrib/velocity/lib" 
+      <fileset dir="${prj-dir}/solr/contrib/velocity/lib" 
        includes="velocity-*.jar,commons-collections-*.jar,commons-beanutils-*.jar"/>
     </copy>
     <copy todir="${package-dir}/lib">
@@ -1151,14 +1147,14 @@
 
   <target name="build-solrj" unless="solr-solrj.jar.present">
     <echo>Lucene Domain Index building dependency ${solr-solrj.jar}</echo>
-    <exec executable="ant" dir="${solr-dir}/solr" newenvironment="true">
+    <exec executable="ant" dir="${prj-dir}/solr" newenvironment="true">
        <arg value="dist-solrj"/>
     </exec>
   </target>
 
   <target name="build-solr" unless="solr-core.jar.present">
     <echo>Lucene Domain Index building dependency ${solr-core.jar}</echo>
-    <exec executable="ant" dir="${solr-dir}/solr" newenvironment="true">
+    <exec executable="ant" dir="${prj-dir}/solr" newenvironment="true">
        <arg value="dist-jar"/>
     </exec>
   </target>

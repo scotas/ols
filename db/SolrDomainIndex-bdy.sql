@@ -153,6 +153,91 @@ type body SolrDomainIndex is
     return sys.ODCIConst.Success;
   end ODCIGetInterfaces;
 
+  STATIC FUNCTION addFilterByExp(pred SYS.ODCIFilterInfoList, queryString VARCHAR2, extraCols VARCHAR2) RETURN VARCHAR2 is
+    strQry       VARCHAR2(32767) := queryString;
+    extraCol     VARCHAR2(4000);
+    colName      VARCHAR2(4000);
+    aliasName    VARCHAR2(4000);
+    entryLength  PLS_INTEGER;
+    extraColNo   PLS_INTEGER;
+    extraColsArr SYS.ODCIVARCHAR2LIST := SYS.ODCIVARCHAR2LIST();
+
+    function anyDataValue(value SYS.ANYDATA) return VARCHAR2 is
+      typeName VARCHAR2(128);
+    begin
+      if value is null then
+        return null;
+      end if;
+      typeName := upper(value.GetTypeName());
+      case typeName
+        when 'SYS.VARCHAR2' then return value.AccessVarchar2();
+        when 'SYS.CHAR' then return value.AccessChar();
+        when 'SYS.NVARCHAR2' then return value.AccessNVarchar2();
+        when 'SYS.NCHAR' then return value.AccessNchar();
+        when 'SYS.NUMBER' then return to_char(value.AccessNumber());
+        when 'SYS.DATE' then return to_char(value.AccessDate(), 'YYYY-MM-DD HH24:MI:SS');
+        when 'SYS.TIMESTAMP' then return to_char(value.AccessTimestamp(), 'YYYY-MM-DD HH24:MI:SS.FF');
+        else
+          raise_application_error(-20001, 'addFilterByExp: unsupported ANYDATA type: ' || typeName);
+      end case;
+    end anyDataValue;
+  begin
+    extraColNo := 1;
+    loop
+      extraCol := regexp_substr(extraCols, '(^|,)(([^,()]|\([^()]*\))*)', 1, extraColNo);
+      exit when extraCol is null;
+      if substr(extraCol, 1, 1) = ',' then
+        extraCol := substr(extraCol, 2);
+      end if;
+      extraCol := trim(extraCol);
+      if extraCol is not null then
+        extraColsArr.extend;
+        extraColsArr(extraColsArr.last) := extraCol;
+      end if;
+      extraColNo := extraColNo + 1;
+    end loop;
+
+    if pred is not null then
+      for i in 1 .. pred.count loop
+        colName := replace(pred(i).ColInfo.ColName, '"', '');
+        aliasName := null;
+        for j in 1 .. extraColsArr.count loop
+          entryLength := regexp_instr(extraColsArr(j), '[[:space:]]+[^[:space:]]+[[:space:]]*$', 1, 1, 0);
+          if entryLength > 0 then
+            extraCol := replace(trim(substr(extraColsArr(j), 1, entryLength - 1)), '"', '');
+            if upper(colName) = upper(extraCol) then
+              aliasName := replace(trim(substr(extraColsArr(j), entryLength)), '"', '');
+              exit;
+            end if;
+          end if;
+        end loop;
+        if aliasName is null then
+          raise_application_error(-20001, 'addFilterByExp: Internal error, col: ''' || colName || ''' not in ExtraCols:' || chr(10) || extraCols);
+        end if;
+
+        if bitand(nvl(pred(i).Flags, 0), sys.ODCIConst.PredNotEqual) = sys.ODCIConst.PredNotEqual then
+          strQry := strQry || ' AND -' || aliasName || ':"' || anyDataValue(pred(i).Stop) || '"';
+        elsif bitand(nvl(pred(i).Flags, 0), sys.ODCIConst.PredExactMatch) = sys.ODCIConst.PredExactMatch
+          and bitand(nvl(pred(i).Flags, 0), sys.ODCIConst.PredIncludeStart) = sys.ODCIConst.PredIncludeStart
+          and bitand(nvl(pred(i).Flags, 0), sys.ODCIConst.PredIncludeStop) = sys.ODCIConst.PredIncludeStop then
+          strQry := strQry || ' AND ' || aliasName || ':"' || anyDataValue(pred(i).Strt) || '"';
+        elsif nvl(pred(i).Flags, 0) = 0 and pred(i).Strt is not null then
+          strQry := strQry || ' AND ' || aliasName || ':{' || anyDataValue(pred(i).Strt) || ' TO *}';
+        elsif nvl(pred(i).Flags, 0) = 0 and pred(i).Stop is not null then
+          strQry := strQry || ' AND ' || aliasName || ':{* TO ' || anyDataValue(pred(i).Stop) || '}';
+        elsif bitand(nvl(pred(i).Flags, 0), sys.ODCIConst.PredIncludeStart) = sys.ODCIConst.PredIncludeStart then
+          strQry := strQry || ' AND ' || aliasName || ':[' || anyDataValue(pred(i).Strt) || ' TO *]';
+        elsif bitand(nvl(pred(i).Flags, 0), sys.ODCIConst.PredIncludeStop) = sys.ODCIConst.PredIncludeStop then
+          strQry := strQry || ' AND ' || aliasName || ':[* TO ' || anyDataValue(pred(i).Stop) || ']';
+        end if;
+      end loop;
+    end if;
+    if substr(strQry, 1, 5) = ' AND ' then
+      strQry := substr(strQry, 6);
+    end if;
+    return strQry;
+  end addFilterByExp;
+
   STATIC FUNCTION TextContains(Text IN VARCHAR2, Key IN VARCHAR2,
                                indexctx IN sys.ODCIIndexCtx, sctx IN OUT NOCOPY SolrDomainIndex, scanflg IN NUMBER) RETURN NUMBER is
   begin
@@ -258,6 +343,7 @@ type body SolrDomainIndex is
       strt number, stop number,
       cmpval VARCHAR2, sortval VARCHAR2, env SYS.ODCIEnv) RETURN NUMBER is
       sortStr           VARCHAR2(4000);
+      queryString       VARCHAR2(4000);
       extraCols         VARCHAR2(4000);
       prefix            VARCHAR2(255) := getIndexPrefix(ia);
   begin
@@ -267,7 +353,12 @@ type body SolrDomainIndex is
      else
         sortStr := sortval;
      end if;
-     return ODCIIndexStartInternal(sctx,ia,op,qi,strt,stop,cmpval,sortStr,env);
+     if (qi.CompInfo is not null and qi.CompInfo.PredInfo is not null and qi.CompInfo.PredInfo.count > 0) then
+        queryString := addFilterByExp(qi.CompInfo.PredInfo,cmpval,extraCols);
+     else
+        queryString := cmpval;
+     end if;
+     return ODCIIndexStartInternal(sctx,ia,op,qi,strt,stop,queryString,sortStr,env);
   end ODCIIndexStart;
 
   MEMBER FUNCTION ODCIIndexFetch(nrows NUMBER, rids OUT NOCOPY SYS.ODCIridlist, env SYS.ODCIEnv) RETURN NUMBER is

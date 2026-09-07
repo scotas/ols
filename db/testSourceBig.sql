@@ -113,14 +113,14 @@ select sc,TEXT from (select rownum as ntop_pos,q.* from
 where ntop_pos>=0 and ntop_pos<10;
 
 -- Must return 9 rows
-select sscore(1),shighlight(1) from test_source_big where scontains(text,'"procedure java"~10',1)>0 order by sscore(1) desc;
-select sscore(1),shighlight(1) from test_source_big where scontains(text,'"procedure java"~10',1)>0 order by sscore(1) asc;
+select sscore(1),shighlight(1) from test_source_big where scontains(text,'title:"procedure java"~10',1)>0 order by sscore(1) desc;
+select sscore(1),shighlight(1) from test_source_big where scontains(text,'title:"procedure java"~10',1)>0 order by sscore(1) asc;
 -- Must return 22 rows
 select /*+ DOMAIN_INDEX_SORT */ sscore(1) from test_source_big where scontains(text,'(logLevel OR prefix) AND "LANGUAGE JAVA"',1)>0;
 select /*+ DOMAIN_INDEX_SORT */ sscore(1) from test_source_big where scontains(text,'(logLevel OR prefix) AND "LANGUAGE JAVA"',1)>0 order by sscore(1) asc;
 
-select /*+ DOMAIN_INDEX_SORT */ sscore(1),shighlight(1) from test_source_big where scontains(text,'"procedure java"~10',1)>0 order by sscore(1) desc;
-select /*+ DOMAIN_INDEX_SORT */ sscore(1),shighlight(1) from test_source_big where scontains(text,'"procedure java"~10',1)>0 order by sscore(1) asc;
+select /*+ DOMAIN_INDEX_SORT */ sscore(1),shighlight(1) from test_source_big where scontains(text,'title:"procedure java"~10',1)>0 order by sscore(1) desc;
+select /*+ DOMAIN_INDEX_SORT */ sscore(1),shighlight(1) from test_source_big where scontains(text,'title:"procedure java"~10',1)>0 order by sscore(1) asc;
 select /*+ DOMAIN_INDEX_SORT */ sscore(1) from test_source_big where scontains(text,'(logLevel OR prefix) AND "LANGUAGE JAVA"',1)>0;
 select /*+ DOMAIN_INDEX_SORT */ sscore(1) from test_source_big where scontains(text,'(logLevel OR prefix) AND "LANGUAGE JAVA"',1)>0 order by sscore(1) asc;
 
@@ -197,9 +197,11 @@ select count(line) from test_source_big
   
 select count(line) from test_source_big
   where scontains(text,'varchar2 AND line_tin:[2600 TO *]')>0;
+select count(line) from test_source_big
+  where scontains(text,'varchar2 AND line_tin:[2600 TO 10000]')>0;
 -- Query equivalent using 11g+ Composite index filter by functionality
-select /*+ DOMAIN_INDEX_SORT DOMAIN_INDEX_FILTER(test_source_big source_big_sidx) */ count(*) from test_source_big
-  where scontains(text,'varchar2')>0 and line between 2600 and 9000;
+select /*+ DOMAIN_INDEX_SORT DOMAIN_INDEX_FILTER(test_source_big source_big_sidx) */ count(line) from test_source_big
+  where scontains(text,'varchar2')>0 and line between 2600 and 10000;
 
 -- Query equivalent using CountHits
 select SolrDomainIndex.countHits('SOURCE_BIG_SIDX','varchar2 AND line_tin:[2600 TO *]') from dual;
