@@ -112,9 +112,9 @@ type body LuceneDomainIndex is
         obyInfo := compInfo.ObyInfo(i);
         if obyInfo.ExprType = 2 then
           if obyInfo.SortOrder = 1 then
-            sortStr := sortStr || ',score asc';
+            sortStr := 'ASC';
           else
-            sortStr := sortStr || ',score desc';
+            sortStr := 'DESC';
           end if;
         else
           for j in 1 .. extraColsArr.count loop
@@ -126,23 +126,24 @@ type body LuceneDomainIndex is
               exprName := replace(obyInfo.ExprName,'"','');
               if upper(colName) = upper(exprName) then
                 if obyInfo.SortOrder = 1 then
-                  sortStr := sortStr || ',' || aliasName || ' asc';
+                  sortStr := sortStr || ',' || aliasName || ':ASC';
                 else
-                  sortStr := sortStr || ',' || aliasName || ' desc';
+                  sortStr := sortStr || ',' || aliasName || ':DESC';
                 end if;
               end if;
             end if;
           end loop;
         end if;
       end loop;
-      if sortStr is not null and length(sortStr) > 0 then
-        return substr(sortStr,2);
+      if substr(sortStr,1,1) = ',' then
+        sortStr := substr(sortStr,2);
       end if;
+      return sortStr;
     end if;
     if bitand(nvl(qi.Flags,0),sys.ODCIConst.QuerySortAsc) = sys.ODCIConst.QuerySortAsc then
-      return 'score asc';
+      return 'ASC';
     end if;
-    return 'score desc';
+    return 'DESC';
   end getSortStr;
 
   STATIC FUNCTION addFilterByExp(pred SYS.ODCIFilterInfoList, queryString VARCHAR2, extraCols VARCHAR2) RETURN VARCHAR2 is
