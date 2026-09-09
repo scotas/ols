@@ -569,7 +569,7 @@
 
   <target name="jit-oracle-classes" description="Force to compile Java classes under Oracle schema">
     <exec executable="${ORACLE_HOME}/bin/${SQLPlus}" dir="./db">
-      <arg value="${dba.usr}/${dba.pwd}@${db.str}"/>
+      <arg value="${dba.usr}/${dba.pwd}@${db.str} as sysdba"/>
       <arg value="@compileSysClasses"/>
     </exec>
   </target>
