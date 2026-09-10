@@ -20,7 +20,23 @@ where ntop_pos>0 and ntop_pos<=5000
 -- drop index source_big_lidx force;
 create index source_big_lidx on test_source_big(text) 
 INDEXTYPE IS LUCENE.LUCENEINDEX 
+filter by type,line
+order by line desc
 parameters('SyncMode:Deferred;LogLevel:ALL;AutoTuneMemory:true;PerFieldAnalyzer:line(org.apache.lucene.analysis.core.KeywordAnalyzer),type(org.apache.lucene.analysis.core.KeywordAnalyzer),TEXT(org.apache.lucene.analysis.core.StopAnalyzer);FormatCols:line(00000);ExtraCols:line "line", type "type";LobStorageParameters:STORAGE (BUFFER_POOL KEEP) CACHE READS');
+
+-- use natural sort of domain index, to get the same order as the table, and use DOMAIN_INDEX_SORT hint to avoid sorting in SQL
+select /*+ FIRST_ROWS DOMAIN_INDEX_SORT */ lscore(1),line,lhighlight(1) from test_source_big where lcontains(text,'"procedure java"~10',1)>0 and line < 60 order by lscore(1) asc;
+
+-- inject domain index sort information to reduce extra sort after result
+select /*+ FIRST_ROWS DOMAIN_INDEX_SORT */ lscore(1),line,lhighlight(1) from test_source_big where lcontains(text,'"procedure java"~10',1)>0 order by line desc;
+
+-- inject filter by expresion to avoid scanning the entire table, Pushed Down Predicates arg
+select /*+ FIRST_ROWS DOMAIN_INDEX_SORT DOMAIN_INDEX_FILTER(test_source_big source_big_lidx) */ count(line) from test_source_big
+  where lcontains(text,'varchar2')>0 and type='PROCEDURE';
+
+-- combined filter by and order by, Pushed Down Predicates arg
+select /*+ FIRST_ROWS DOMAIN_INDEX_SORT DOMAIN_INDEX_FILTER(test_source_big source_big_lidx) */ lscore(1),type,line from test_source_big
+  where lcontains(text,'"procedure java"~10',1)>0 and type = 'PACKAGE' order by line desc;
 
 CREATE INDEX SOURCE_BIG_SIDX ON TEST_SOURCE_BIG(TEXT) 
 INDEXTYPE IS LUCENE.SOLRINDEX 
