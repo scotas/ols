@@ -24,17 +24,66 @@ filter by type,line
 order by line desc
 parameters('SyncMode:Deferred;LogLevel:ALL;AutoTuneMemory:true;PerFieldAnalyzer:line(org.apache.lucene.analysis.core.KeywordAnalyzer),type(org.apache.lucene.analysis.core.KeywordAnalyzer),TEXT(org.apache.lucene.analysis.core.StopAnalyzer);FormatCols:line(00000);ExtraCols:line "line", type "type";LobStorageParameters:STORAGE (BUFFER_POOL KEEP) CACHE READS');
 
+-- no domain index sort, extra sort in SQL, and no filter by expression, so it will scan the entire table
+-- ------------------------------------------------------------------------------------------------
+-- | Id  | Operation                    | Name            | Rows  | Bytes | Cost (%CPU)| Time     |
+------------------------------------------------------------------------------------------------
+-- |   0 | SELECT STATEMENT             |                 |  4166 |   423K|  1872   (1)| 00:00:01 |
+-- |   1 |  SORT ORDER BY               |                 |  4166 |   423K|  1872   (1)| 00:00:01 |
+-- |*  2 |   TABLE ACCESS BY INDEX ROWID| TEST_SOURCE_BIG |  4166 |   423K|  1871   (0)| 00:00:01 |
+-- |*  3 |    DOMAIN INDEX              | SOURCE_BIG_LIDX |       |       |            |          |
+-- ------------------------------------------------------------------------------------------------
+--     2 - filter("LINE"<60)
+--     3 - access("LUCENE"."LCONTAINS"("TEXT",'"procedure java"~10',1)>0)
+select lscore(1),line,lhighlight(1) from test_source_big where lcontains(text,'"procedure java"~10',1)>0 and line < 60 order by lscore(1) asc;
+
 -- use natural sort of domain index, to get the same order as the table, and use DOMAIN_INDEX_SORT hint to avoid sorting in SQL
+-- -----------------------------------------------------------------------------------------------
+-- | Id  | Operation                   | Name            | Rows  | Bytes | Cost (%CPU)| Time     |
+-- -----------------------------------------------------------------------------------------------
+-- |   0 | SELECT STATEMENT            |                 |  4166 |   423K|  1872   (1)| 00:00:01 |
+-- |*  1 |  TABLE ACCESS BY INDEX ROWID| TEST_SOURCE_BIG |  4166 |   423K|  1872   (1)| 00:00:01 |
+-- |*  2 |   DOMAIN INDEX              | SOURCE_BIG_LIDX |       |       |            |          |
+-- -----------------------------------------------------------------------------------------------
+--     1 - filter("LINE"<60)
+--     2 - access("LUCENE"."LCONTAINS"("TEXT",'"procedure java"~10',1)>0)
 select /*+ FIRST_ROWS DOMAIN_INDEX_SORT */ lscore(1),line,lhighlight(1) from test_source_big where lcontains(text,'"procedure java"~10',1)>0 and line < 60 order by lscore(1) asc;
 
 -- inject domain index sort information to reduce extra sort after result
+-- -----------------------------------------------------------------------------------------------
+-- | Id  | Operation                   | Name            | Rows  | Bytes | Cost (%CPU)| Time     |
+-- -----------------------------------------------------------------------------------------------
+-- |   0 | SELECT STATEMENT            |                 | 17336 |  1760K|  1872   (1)| 00:00:01 |
+-- |   1 |  TABLE ACCESS BY INDEX ROWID| TEST_SOURCE_BIG | 17336 |  1760K|  1872   (1)| 00:00:01 |
+-- |*  2 |   DOMAIN INDEX              | SOURCE_BIG_LIDX |       |       |            |          |
+-- -----------------------------------------------------------------------------------------------
+--    2 - access("LUCENE"."LCONTAINS"("TEXT",'"procedure java"~10',1)>0)
 select /*+ FIRST_ROWS DOMAIN_INDEX_SORT */ lscore(1),line,lhighlight(1) from test_source_big where lcontains(text,'"procedure java"~10',1)>0 order by line desc;
 
 -- inject filter by expresion to avoid scanning the entire table, Pushed Down Predicates arg
+-- ------------------------------------------------------------------------------------------------
+-- | Id  | Operation                    | Name            | Rows  | Bytes | Cost (%CPU)| Time     |
+-- ------------------------------------------------------------------------------------------------
+-- |   0 | SELECT STATEMENT             |                 |     1 |   113 |    27   (0)| 00:00:01 |
+-- |   1 |  SORT AGGREGATE              |                 |     1 |   113 |            |          |
+-- |   2 |   TABLE ACCESS BY INDEX ROWID| TEST_SOURCE_BIG |   615 | 69495 |    27   (0)| 00:00:01 |
+-- |*  3 |    DOMAIN INDEX              | SOURCE_BIG_LIDX |       |       |     0   (0)| 00:00:01 |
+-- ------------------------------------------------------------------------------------------------
+--     3 - access("LUCENE"."LCONTAINS"("TEXT",'varchar2')>0)
+--         filter("TYPE"='PROCEDURE')
 select /*+ FIRST_ROWS DOMAIN_INDEX_SORT DOMAIN_INDEX_FILTER(test_source_big source_big_lidx) */ count(line) from test_source_big
   where lcontains(text,'varchar2')>0 and type='PROCEDURE';
 
 -- combined filter by and order by, Pushed Down Predicates arg
+-- -----------------------------------------------------------------------------------------------
+-- | Id  | Operation                   | Name            | Rows  | Bytes | Cost (%CPU)| Time     |
+-- -----------------------------------------------------------------------------------------------
+-- |   0 | SELECT STATEMENT            |                 | 12434 |  1372K|   457   (1)| 00:00:01 |
+-- |   1 |  TABLE ACCESS BY INDEX ROWID| TEST_SOURCE_BIG | 12434 |  1372K|   457   (1)| 00:00:01 |
+-- |*  2 |   DOMAIN INDEX              | SOURCE_BIG_LIDX |       |       |     0   (0)| 00:00:01 |
+-- -----------------------------------------------------------------------------------------------
+--     2 - access("LUCENE"."LCONTAINS"("TEXT",'"procedure java"~10',1)>0)
+--         filter("TYPE"='PACKAGE')
 select /*+ FIRST_ROWS DOMAIN_INDEX_SORT DOMAIN_INDEX_FILTER(test_source_big source_big_lidx) */ lscore(1),type,line from test_source_big
   where lcontains(text,'"procedure java"~10',1)>0 and type = 'PACKAGE' order by line desc;
 
