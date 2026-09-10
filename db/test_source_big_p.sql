@@ -47,13 +47,26 @@ alter index SOURCE_BIG_SIDX_P rebuild partition LINE_125;
 select count(line) from test_source_big_par
   where scontains(text,'varchar2 AND line_tin:[3000 TO *]')>0 and line>=3000;
 
+-- equivalent to above query, but using the DOMAIN_INDEX_FILTER hint to avoid scanning the entire table, Pushed Down Predicates arg
+select /*+ DOMAIN_INDEX_FILTER(test_source_big_par, source_big_sidx_p)  */ count(line) from test_source_big_par
+  where scontains(text,'varchar2')>0 and line>=3000;
+
+-- equivalent to above query, but using the DOMAIN_INDEX_FILTER hint to avoid scanning the entire table, Pushed Down Predicates arg
+select /*+ DOMAIN_INDEX_FILTER(test_source_big_par, source_big_sidx_p)  */ count(line) from test_source_big_par
+  where scontains(text,'varchar2')>0 and line>1500;
+
+-- partition prunning, plus using the DOMAIN_INDEX_FILTER hint to avoid scanning the entire table/partition, Pushed Down Predicates arg
+select /*+ DOMAIN_INDEX_FILTER(test_source_big_par, source_big_sidx_p)  */ count(line) from test_source_big_par
+  where scontains(text,'varchar2')>0 and type='PACKAGE' and line>1500;
+
 select sc,ln,sh from (select rownum as ntop_pos,q.* from
 (select /*+ DOMAIN_INDEX_SORT */ sscore(1) sc,line ln, shighlight(1) sh
 from test_source_big_par where scontains(text,'rownum:[1 TO 10] AND function',1)>0 order by sscore(1) desc) q)
 where ntop_pos>=1 and ntop_pos<11;
 
-select /*+ DOMAIN_INDEX_SORT */ sscore(1) sc,line, shighlight(1) 
-from TEST_SOURCE_BIG_PAR where scontains(text,'rownum:[1 TO 20] AND function',1)>0 order by sscore(1) desc;
+-- only shows 20 rows multiply by the number of partitions, because the query is executed in parallel on each partition, and the results are merged at the end
+select /*+ DOMAIN_INDEX_SORT PARALLEL(test_source_big_par,4) */ sscore(1) sc,line, shighlight(1) 
+from test_source_big_par where scontains(text,'rownum:[1 TO 20] AND function',1)>0 order by sscore(1) desc;
 
 select count(*) from TEST_SOURCE_BIG_PAR;
 select SOLRDOMAININDEX.countHits('SOURCE_BIG_SIDX_P','*:*') from DUAL;
