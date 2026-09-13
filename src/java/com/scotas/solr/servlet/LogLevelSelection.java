@@ -131,7 +131,7 @@ public final class LogLevelSelection extends HttpServlet {
     "}\n" + 
     "</style>");
     out.write("</head><body style=\"\">\n");
-    out.write("<a href=\".\"><img border=\"0\" align=\"right\" src=\"http://scotas.com/images/logo-scotas-black.png\" alt=\"Scotas OLS\"></a>");
+    out.write("<a href=\".\"><img border=\"0\" align=\"right\" src=\"https://raw.githubusercontent.com/scotas/docker-images/refs/heads/master/sample-stacks/logo.png\" alt=\"Scotas OLS\"></a>");
     out.write("<h1>JDK Log Level Selector</h1>");
     out.write("<h2>Oracle trace file: " + this.outFile + "</h2>");
 
