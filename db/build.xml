@@ -692,7 +692,7 @@
       <sysproperty key="idx.sch" value="local"/>
       <sysproperty key="db.usr" value="scott"/>
       <sysproperty key="db.pwd" value="tiger"/>
-      <sysproperty key="db.str" value="orcl"/>
+      <sysproperty key="db.str" value="freepdb1"/>
       <classpath>
             <pathelement location="lib/lucene-core-${version}.jar"/>
             <pathelement location="lib/lucene-ols-${version}-test.jar"/>
@@ -707,7 +707,7 @@
     <junit printsummary="yes" fork="no" haltonfailure="yes" showoutput="yes">
       <sysproperty key="db.usr" value="scott"/>
       <sysproperty key="db.pwd" value="tiger"/>
-      <sysproperty key="db.str" value="orcl"/>
+      <sysproperty key="db.str" value="freepdb1"/>
       <sysproperty key="idx.upd" value="0"/>
       <sysproperty key="idx.sch" value="0,1"/>
       <sysproperty key="db.online-mode" value="true"/>
@@ -727,7 +727,7 @@
     <junit printsummary="yes" fork="no" haltonfailure="yes" showoutput="yes">
       <sysproperty key="db.usr" value="scott"/>
       <sysproperty key="db.pwd" value="tiger"/>
-      <sysproperty key="db.str" value="orcl"/>
+      <sysproperty key="db.str" value="freepdb1"/>
       <classpath>
             <pathelement location="lib/lucene-ols-${version}-test.jar"/>
             <pathelement location="${ORACLE_HOME}/jdbc/lib/ojdbc6.jar"/>
@@ -741,7 +741,7 @@
     <junit printsummary="yes" fork="no" haltonfailure="yes" showoutput="yes">
       <sysproperty key="db.usr" value="scott"/>
       <sysproperty key="db.pwd" value="tiger"/>
-      <sysproperty key="db.str" value="orcl"/>
+      <sysproperty key="db.str" value="freepdb1"/>
       <classpath>
             <pathelement location="lib/lucene-ols-${version}-test.jar"/>
             <pathelement location="${ORACLE_HOME}/jdbc/lib/ojdbc6.jar"/>
@@ -755,7 +755,7 @@
     <junit printsummary="yes" fork="no" haltonfailure="yes" showoutput="yes">
       <sysproperty key="db.usr" value="scott"/>
       <sysproperty key="db.pwd" value="tiger"/>
-      <sysproperty key="db.str" value="orcl"/>
+      <sysproperty key="db.str" value="freepdb1"/>
       <classpath>
             <pathelement location="lib/lucene-ols-${version}-test.jar"/>
             <pathelement location="${ORACLE_HOME}/jdbc/lib/ojdbc6.jar"/>
