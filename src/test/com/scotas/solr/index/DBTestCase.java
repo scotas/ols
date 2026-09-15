@@ -321,29 +321,31 @@ public class DBTestCase extends TestCase {
         int n = row % 5373484 + 1; // range between 1 and Max Julian Date
         int startWindow = (n / batchSize) * batchSize;
         int endWindow = ((n / batchSize) + 1) * batchSize;
-        try {
-            findStatement.setInt(1, n);
-            findStatement.setInt(2, startWindow);
-            findStatement.setInt(3, endWindow);
-            elapsedTime = System.currentTimeMillis();
-            rs = findStatement.executeQuery();
-            boolean found = rs.next();
-            if (found) { }
-            /*    System.out.println("Found rows with: " + n +
-                                   " elapsed time: " +
-                                   (System.currentTimeMillis() - elapsedTime) +
-                                   " ms. window [" + startWindow + ".." +
-                                   endWindow + "]");
-            else
-                System.out.println("Not Found rows with: " + n + " elapsed time: "+ (System.currentTimeMillis() - elapsedTime) + " ms."); */
-        } catch (SQLException s) {
-            System.err.println("Error during find Rows: " +
-                               s.getLocalizedMessage());
-            s.printStackTrace();
-        } finally {
-            if (rs != null)
-                rs.close();
-            rs = null;
+        synchronized (findStatement) {
+            try {
+                findStatement.setInt(1, n);
+                findStatement.setInt(2, startWindow);
+                findStatement.setInt(3, endWindow);
+                elapsedTime = System.currentTimeMillis();
+                rs = findStatement.executeQuery();
+                boolean found = rs.next();
+                if (found) { }
+                /*    System.out.println("Found rows with: " + n +
+                                    " elapsed time: " +
+                                    (System.currentTimeMillis() - elapsedTime) +
+                                    " ms. window [" + startWindow + ".." +
+                                    endWindow + "]");
+                else
+                    System.out.println("Not Found rows with: " + n + " elapsed time: "+ (System.currentTimeMillis() - elapsedTime) + " ms."); */
+            } catch (SQLException s) {
+                System.err.println("Error during find Rows: " +
+                                s.getLocalizedMessage());
+                s.printStackTrace();
+            } finally {
+                if (rs != null)
+                    rs.close();
+                rs = null;
+            }
         }
         elapsedTime = System.currentTimeMillis() - elapsedTime;
         return elapsedTime;
