@@ -918,7 +918,13 @@
       <sysproperty key="db.usr" value="scott"/>
       <sysproperty key="db.pwd" value="tiger"/>
       <sysproperty key="db.str" value="freepdb1"/>
-      <sysproperty key="db.online-mode" value="true"/>
+      <sysproperty key="idx.upd" value="0"/>
+      <sysproperty key="idx.sch" value="0,1"/>
+      <!-- online-mode=true no background thread calling sync, changes are enqueued by AQ
+           online-mode=false background thread calling sync -->
+      <sysproperty key="db.online-mode" value="false"/>
+      <!-- commitOnSync=true force commit on sync, 
+           commitOnSync=false no commit on sync, commit is called internally by Solr parameter -->
       <sysproperty key="db.commitOnSync" value="false"/>
       <sysproperty key="db.batch-size" value="200"/>
       <sysproperty key="db.lucene-mode" value="true"/>
@@ -946,7 +952,7 @@
     </junit>
   </target>
 
-  <target name="test-queryhits-solr" description="Run Test on Solr Domain Index query functionality">
+  <target name="test-queryhits-ols" description="Run Test on Solr Domain Index query functionality">
     <junit printsummary="yes" fork="no" haltonfailure="yes" showoutput="yes">
       <sysproperty key="db.usr" value="scott"/>
       <sysproperty key="db.pwd" value="tiger"/>
