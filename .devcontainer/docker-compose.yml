@@ -1,0 +1,92 @@
+version: '3'
+
+services:
+  dev:
+    # Using a Dockerfile is optional, but included for completeness.
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      # [Optional] You can use build args to set options. e.g. 'VARIANT' below affects the image in the Dockerfile
+      args: 
+        BRANCH: "${OLS_BRANCH}"
+        RELEASE: "${OLS_RELEASE}"
+        ORACLE_PWD: "${ORACLE_PWD}"
+        ORACLE_SID: "${SID}"
+        ORACLE_PDB: "${PDB}"
+        ORACLE_VERSION: "${VERSION}"
+        ORACLE_RU: "${RU}"
+        ORACLE_IMAGE: "${IMAGE}"
+        SRC_HOME: "${SRC_HOME}"
+
+    healthcheck:
+      test: exit 0
+      interval: 60s
+      timeout: 3s
+
+    volumes:
+      # This is where VS Code should expect to find your project's source code and the value of "workspaceFolder" in .devcontainer/devcontainer.json
+      - ..:/home/ols:cached
+
+      # Uncomment the next line to use Docker from inside the container. See https://aka.ms/vscode-remote/samples/docker-from-docker-compose for details.
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+
+    environment:
+      ORACLE_PASSWORD: "${ORACLE_PWD}"
+      APP_USER: "scott"
+      APP_USER_PASSWORD: "tiger"
+      ORACLE_PWD: "${ORACLE_PWD}"
+      ORACLE_SID: "${SID}"
+      ORACLE_PDB: "${PDB}"
+    # Overrides default command so things don't shut down after the process ends.
+    command: /bin/sh -c "while sleep 1000; do :; done"  
+    
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally. 
+    # (Adding the "ports" property to this file will not forward from a Codespace.)
+
+    # Uncomment the next line to use a non-root user for all processes - See https://aka.ms/vscode-remote/containers/non-root for details.
+    user: oracle
+
+    # Uncomment the next four lines if you will use a ptrace-based debugger like C++, Go, and Rust.
+    # cap_add:
+    #   - SYS_PTRACE
+    # security_opt:
+    #   - seccomp:unconfined
+    
+  # You can include other services not opened by VS Code as well
+  db:
+    image: "${IMAGE}:${VERSION}.${RU}"
+    hostname: ols
+    volumes:
+      # uncomment the next line to use a shared memory volume for Oracle, avoid JOEX crash errors on Linux, but it will not work on MacOS or Windows.
+      #- /run/shm:/dev/shm
+      - db_data:/opt/oracle/oradata
+      #- ../../ols-scripts-r6:/container-entrypoint-initdb.d:ro
+    ports:
+      - 2521:1521
+      - 9099:9099
+      - 9098:9098
+    environment:
+      ORACLE_PASSWORD: "${ORACLE_PWD}"
+      APP_USER: "scott"
+      APP_USER_PASSWORD: "tiger"
+      ORACLE_PWD: "${ORACLE_PWD}"
+      ORACLE_SID: "${SID}"
+      ORACLE_PDB: "${PDB}"
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      # resources:
+      #   limits:
+      #     cpus: '1.50'
+      #     memory: 3072M
+      #   reservations:
+      #     cpus: '1.50'
+      #     memory: 3072M
+
+volumes:
+  # Persistent directory for your Oracle datafiles, change first before opening in Dev Container UID:GID must be 54321:54321
+  db_data:

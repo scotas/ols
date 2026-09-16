@@ -1,0 +1,131 @@
+Index: lucene/common-build.xml
+===================================================================
+--- lucene/common-build.xml	(revision 1873740)
++++ lucene/common-build.xml	(working copy)
+@@ -507,7 +507,7 @@
+     <attribute name="manifest.file" default="${manifest.file}"/>
+     <sequential>
+       <!-- If possible, include the svnversion -->
+-      <exec dir="." executable="${svnversion.exe}" outputproperty="svnversion" failifexecutionfails="false"/>
++      <!-- exec dir="." executable="${svnversion.exe}" outputproperty="svnversion" failifexecutionfails="false"/ -->
+ 
+       <manifest file="@{manifest.file}">
+         <!--
+@@ -1226,6 +1226,10 @@
+     <!-- convenience target to package core JAR -->
+   </target>
+ 
++  <target name="jar-test" depends="compile-test">
++    <jar destfile="${build.dir}/${final.name}-test.jar" basedir="${build.dir}/classes/test" excludes="**/*.java"/>
++  </target>
++
+   <target name="jar-src">
+     <sequential>
+       <mkdir dir="${build.dir}" />
+Index: lucene/ivy-settings.xml
+===================================================================
+--- lucene/ivy-settings.xml	(revision 1873740)
++++ lucene/ivy-settings.xml	(working copy)
+@@ -27,10 +27,10 @@
+   <include url="${ivy.default.settings.dir}/ivysettings-main-chain.xml"/>
+ 
+   <resolvers>
+-    <ibiblio name="sonatype-releases" root="http://oss.sonatype.org/content/repositories/releases" m2compatible="true" />
++    <ibiblio name="sonatype-releases" root="https://oss.sonatype.org/content/repositories/releases" m2compatible="true" />
+ 
+-    <!-- you might need to tweak this from china so it works -->
+-    <ibiblio name="working-chinese-mirror" root="http://mirror.netcologne.de/maven2" m2compatible="true" />
++    <!-- you might need to tweak this since January 2020 -->
++    <ibiblio name="working-https-mirror" root="https://repo.maven.apache.org/maven2" m2compatible="true" />
+ 
+     <!--
+     <filesystem name="local-maven-2" m2compatible="true" local="true">
+@@ -44,9 +44,9 @@
+     <chain name="default" returnFirst="true" checkmodified="true" changingPattern=".*SNAPSHOT">
+       <resolver ref="local"/>
+       <!-- <resolver ref="local-maven-2" /> -->
++      <resolver ref="working-https-mirror" />
++      <resolver ref="sonatype-releases" />
+       <resolver ref="main"/>
+-      <resolver ref="sonatype-releases" />
+-      <resolver ref="working-chinese-mirror" />
+     </chain>
+   </resolvers>
+ 
+Index: solr/core/src/java/org/apache/solr/handler/component/QueryElevationComponent.java
+===================================================================
+--- solr/core/src/java/org/apache/solr/handler/component/QueryElevationComponent.java	(revision 1873740)
++++ solr/core/src/java/org/apache/solr/handler/component/QueryElevationComponent.java	(working copy)
+@@ -186,7 +186,15 @@
+           // TODO : shouldn't have to keep reading the config name when it has been read before
+           exists = zkController.configFileExists(zkController.readConfigName(core.getCoreDescriptor().getCloudDescriptor().getCollectionName()), f);
+         } else {
+-          File fC = new File(core.getResourceLoader().getConfigDir(), f);
++          try {
++            Config cfg = new Config( core.getResourceLoader(), f );
++            elevationCache.put(null, loadElevationMap( cfg ));
++          } catch (Exception e) {
++            throw new SolrException( SolrException.ErrorCode.SERVER_ERROR,
++               "QueryElevationComponent missing config file: '"+f + "\n"
++               + e.getMessage() );
++          }
++          /*File fC = new File( core.getResourceLoader().getConfigDir(), f );
+           File fD = new File(core.getDataDir(), f);
+           if (fC.exists() == fD.exists()) {
+             throw new SolrException(SolrException.ErrorCode.SERVER_ERROR,
+@@ -198,7 +206,7 @@
+             log.info("Loading QueryElevation from: " + fC.getAbsolutePath());
+             Config cfg = new Config(core.getResourceLoader(), f);
+             elevationCache.put(null, loadElevationMap(cfg));
+-          }
++          }*/
+         }
+         //in other words, we think this is in the data dir, not the conf dir
+         if (!exists) {
+Index: solr/core/src/java/org/apache/solr/request/ServletSolrParams.java
+===================================================================
+--- solr/core/src/java/org/apache/solr/request/ServletSolrParams.java	(revision 1873740)
++++ solr/core/src/java/org/apache/solr/request/ServletSolrParams.java	(working copy)
+@@ -21,12 +21,24 @@
+ 
+ import org.apache.solr.common.params.MultiMapSolrParams;
+ 
++import java.util.Enumeration;
++import java.util.HashMap;
++
++import java.util.Map;
++
+ /**
+  *
+  */
+ public class ServletSolrParams extends MultiMapSolrParams {
+   public ServletSolrParams(ServletRequest req) {
+-    super(req.getParameterMap());
++    //super(req.getParameterMap());
++    super(new HashMap<String,String[]>());
++    Enumeration parmsNames = req.getParameterNames();
++    Map<String,String[]> pars = this.getMap();
++    while (parmsNames.hasMoreElements()) {
++      String parName = (String)parmsNames.nextElement();
++      pars.put(parName, req.getParameterValues(parName));
++    }
+   }
+ 
+   @Override
+Index: solr/solrj/src/java/org/apache/solr/client/solrj/util/ClientUtils.java
+===================================================================
+--- solr/solrj/src/java/org/apache/solr/client/solrj/util/ClientUtils.java	(revision 1873740)
++++ solr/solrj/src/java/org/apache/solr/client/solrj/util/ClientUtils.java	(working copy)
+@@ -32,7 +32,11 @@
+ import org.apache.solr.common.SolrInputField;
+ import org.apache.solr.common.cloud.Slice;
+ import org.apache.solr.common.params.SolrParams;
+-import org.apache.solr.common.util.*;
++import org.apache.solr.common.util.Base64;
++import org.apache.solr.common.util.ContentStream;
++import org.apache.solr.common.util.ContentStreamBase;
++import org.apache.solr.common.util.DateUtil;
++import org.apache.solr.common.util.XML;
+ 
+ 
+ /**

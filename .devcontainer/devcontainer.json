@@ -1,0 +1,50 @@
+// For format details, see https://aka.ms/vscode-remote/devcontainer.json or this file's README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.134.0/containers/php
+{
+	"name": "Scotas OLS",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "dev",
+	"runServices": ["dev","db"],
+	"workspaceFolder": "/home/ols",
+	
+	// Set *default* container specific settings.json values on container create.
+	"customizations": {
+		"vscode": {
+			"settings": {
+                "terminal.integrated.shell.linux": "/bin/bash",
+				"java.jdt.ls.java.home": "/usr/lib/jvm/java-21-openjdk",
+				"java.project.referencedLibraries": [
+					"/home/ols/lib/*.jar",
+					"/home/ols/lib/*.zip",
+					"/home/lucene/build/**/*.jar",
+					"/home/lucene/test-framework/**/*.jar",
+					"/home/solr/dist/**/*.jar" 
+				]
+			},
+			"extensions": [
+				"vscjava.vscode-java-pack",
+				"ms-azuretools.vscode-docker",
+				"oracle.oracledevtools"
+			]
+		}
+	},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [80]
+
+	// "mounts": [
+	// 	"source=/etc/hosts,target=/etc/hosts,type=bind,consistency=cached"
+	//   ]
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "cd /home/lucene;ant build-modules;cd ../solr;ant dist-core dist-solrj dist-contrib;cd ../ols;ORACLE_HOME=$(dirname $(dirname `readlink -f /usr/bin/sqlplus`)) ant package-zip",
+
+	// Comment out to connect as root instead.
+	"remoteUser": "oracle"
+	// Increase JOB_QUEUE_PROCESSES and set trace for OLS, Refer to Mos Note KB859740.1 for more details
+	// [oracle@faf561f0ed9c ols]$ sqlplus / as sysdba
+	// SQL> ALTER SYSTEM SET JOB_QUEUE_PROCESSES = 50 SCOPE=BOTH;
+	// SQL> ALTER SYSTEM SET EVENT = '29580 trace name context forever, level 4' SCOPE = SPFILE;
+	// grant luceneuser to scott to run tests
+	// [oracle@faf561f0ed9c ols]$ sqlplus sys/$ORACLE_PWD as sysdba
+	// SQL> grant luceneuser to scott;
+}
